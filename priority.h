@@ -17,9 +17,9 @@ namespace Priority {
     int* tleavel(BooleanDag *g, int *value=NULL);   ///< calculate the top level of each vertice in a DAG
 
     /* Recursive Functions */
-    int ranku(BooleanDag *g, unsigned int id, int *value);      ///< calculate the upward rank of a vertice in a DAG in a recursive way
-    int bleavel(BooleanDag *g, unsigned int id, int *value);    ///< calculate the bottom level of a vertice in a DAG in a recursive way
-    int rankd(BooleanDag *g, unsigned int id, int *value);      ///< calculate the downward rank of a vertice in a DAG in a recursive way
-    int tleavel(BooleanDag *g, unsigned int id, int *value);    ///< calculate the top level of a vertice in a DAG in a recursive way
+    int ranku(BooleanDag *g, uint id, int *value);      ///< calculate the upward rank of a vertice in a DAG in a recursive way
+    int bleavel(BooleanDag *g, uint id, int *value);    ///< calculate the bottom level of a vertice in a DAG in a recursive way
+    int rankd(BooleanDag *g, uint id, int *value);      ///< calculate the downward rank of a vertice in a DAG in a recursive way
+    int tleavel(BooleanDag *g, uint id, int *value);    ///< calculate the top level of a vertice in a DAG in a recursive way
 }
 #endif

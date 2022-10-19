@@ -154,12 +154,12 @@ int BooleanDag::linkDAG()
 
 
 /* Vistors */
-unsigned int BooleanDag::getsize()
+uint BooleanDag::getsize()
 {
     return size;
 }
 
-Vertice* BooleanDag::getvertice(unsigned int id)
+Vertice* BooleanDag::getvertice(uint id)
 {
     return V+id;
 }
@@ -171,19 +171,19 @@ void BooleanDag::traversePrint()
     printf("--------Boolean Dag Traverse BEGIN--------\n\n");
     for (uint i = 0; i < size; ++i) {
         v = V+i;
-        printf("[Vertice No.%d] weight:%d\n", i+1, v->weight);
+        printf("[Vertice No.%u] weight:%d\n", i+1, v->weight);
 
         printf("\tPredecessors:");
         for (uint j = 0; j < v->prednum; ++j) {
             e = *(v->predecessors+j);
-            printf(" %d(%d)", e->src->id+1, e->weight);
+            printf(" %u(%d)", e->src->id+1, e->weight);
         }
         printf("\n");
 
         printf("\tSuccessors:");
         for (uint j = 0; j < v->succnum; ++j) {
             e = *(v->successors+j);
-            printf(" %d(%d)", e->dest->id+1, e->weight);
+            printf(" %u(%d)", e->dest->id+1, e->weight);
         }
         printf("\n");
 

@@ -1,6 +1,5 @@
 #include <stdio.h>
-#include "booleandag.h"
-#include "priority.h"
+#include "list-scheduler.h"
 
 using namespace Priority;
 
@@ -12,7 +11,6 @@ int main()
     uint src[] = {0, 0, 0, 0, 0, 1, 1, 2, 3, 5, 6, 7};
     uint dest[] = {1, 2, 3, 4, 6, 5, 6, 7, 7, 8, 8, 8};
     int eweight[] = {4, 1, 1, 1, 10, 1, 1, 1, 1, 5, 6, 5};
-    int *value = NULL;
     G.init(9);
 
     for (int i = 0; i < 9; ++i) {
@@ -22,16 +20,14 @@ int main()
         G.addEdge(src[i], dest[i], eweight[i]);
     }
     G.linkDAG();
-    G.traversePrint();
+    // G.traversePrint();
 
-    value = ranku(&G);
-
-    printf("RankU:\n");
-    for (int i = 0; i < 9; ++i) {
-        printf("%d ", value[i]);
-    }
-    printf("\n");
-    delete[] value;
+    ListScheduler S;
+    Processors *P = S.HEFT(&G, 3);
+    P->printScheduleByPE();
+    P->printScheduleByTasks();
+    printf("The makespan = %d\n", P->getmakespan());
+    delete P;
     return 0;
 }
 
