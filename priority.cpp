@@ -45,6 +45,41 @@ int Priority::ranku(BooleanDag *g, uint id, int *value)
     return (value[id] = max);
 }
 
+int *Priority::rankd(BooleanDag *g, int *value)
+{
+    int size = g->getsize();
+    if (!value) {
+        value = new int[size];
+    }
+    for (uint i = 0u; i < size; ++i) {
+        *(value+i) = -1;
+    }
+    for (uint i = 0u; i < size; ++i) {
+        rankd(g, i, value);
+    }
+    return value;
+}
+
+int Priority::rankd(BooleanDag *g, uint id, int *value)
+{
+    if (value[id] >= 0) {
+        return value[id];
+    }
+    Vertice *v = g->getvertice(id);
+    if (v->prednum == 0) {
+        return (value[id] = 0);
+    }
+    int max = 0;
+    int currank;
+    Edge *e;
+    for (uint i = 0; i < v->prednum; ++i) {
+        e = *(v->predecessors+i);
+        currank = e->src->weight + e->weight + rankd(g, e->src->id, value);
+        max = max > currank ? max : currank;
+    }
+    return (value[id] = max);
+}
+
 // int main()
 // {
 //     BooleanDag g;

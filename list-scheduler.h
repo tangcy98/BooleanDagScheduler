@@ -16,7 +16,9 @@
 class ListScheduler {
 
 public:
-    Processors* HEFT(BooleanDag *g, uint pnum);
+    Processors* HEFTU(BooleanDag *g, uint pnum);
+    Processors* HEFTD(BooleanDag *g, uint pnum);
+    Processors* HEFTUD(BooleanDag *g, uint pnum);
 };
 
 

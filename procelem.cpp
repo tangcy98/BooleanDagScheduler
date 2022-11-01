@@ -1,4 +1,3 @@
-
 /**  
  * @file    procelem.cpp
  * @brief   Processing Element Implementation
@@ -119,7 +118,7 @@ void Processors::printScheduleByTasks()
     Assignment *a;
     for (uint i = 0u; i < size; ++i) {
         a = getAssignmentByTask(i);
-        printf("Task %u is assigned to PE No.%u. Start at %d. End at %d.\n", a->tid, a->pid, a->starttime, a->finishtime);
+        printf("    Task %u is assigned to PE No.%u. Start at %d. End at %d.\n", a->tid, a->pid, a->starttime, a->finishtime);
     }
     printf("--------Schedule of each Task END--------\n");
 }
