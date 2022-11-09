@@ -2,8 +2,8 @@
  * @file    booleandag.cpp
  * @brief   Basic implementation of boolean dag
  * @author  Chenu Tang
- * @version 0.1
- * @date    2022-10-17
+ * @version 2.0
+ * @date    2022-11-09
  * @note    
  */
 
@@ -38,6 +38,7 @@ BooleanDag::BooleanDag()
 {
     V = NULL;
     size = 0u;
+    prio = NULL;
 }
 
 BooleanDag::BooleanDag(uint n)
@@ -45,11 +46,14 @@ BooleanDag::BooleanDag(uint n)
     size = n;
     if (!n) {
         V = NULL;
+        prio = NULL;
     }
     else {
         V = new Vertice[n];
+        prio = new int[n];
     }
 }
+
 
 
 /* Construction related */
@@ -59,6 +63,7 @@ int BooleanDag::init()
         destroy();
     }
     V = NULL;
+    prio = NULL;
     size = 0u;
     return 1;
 }
@@ -71,9 +76,11 @@ int BooleanDag::init(uint n)
     size = n;
     if (!n) {
         V = NULL;
+        prio = NULL;
     }
     else {
         V = new Vertice[n];
+        prio = new int[n];
     }
     return 1;
 }
@@ -81,23 +88,27 @@ int BooleanDag::init(uint n)
 ///< WIP
 int BooleanDag::destroy()
 {
-
+    if (size > 0) {
+        delete[] V;
+        delete[] prio;
+    }
     return 1;
 }
 
-int BooleanDag::addVertice(int weight)
+int BooleanDag::addVertice(int weight, const std::string &s)
 {
     for (uint i = 0; i < size; ++i) {
         if ((V+i)->weight < 0) {
             (V+i)->id = i;
             (V+i)->weight = weight;
+            (V+i)->name = s;
             return 1;
         }
     }
     return 0;
 }
 
-int BooleanDag::addVertice(uint id, int weight)
+int BooleanDag::addVertice(uint id, int weight, const std::string &s)
 {
     Vertice *v = V+id;
     if (v->weight >= 0) {
@@ -105,6 +116,21 @@ int BooleanDag::addVertice(uint id, int weight)
     }
     v->id = id;
     v->weight = weight;
+    v->name = s;
+    return 1;
+}
+
+int BooleanDag::addVertice(uint id, int weight, VerticeType type, int inv, const std::string &s)
+{
+    Vertice *v = V+id;
+    if (v->weight >= 0) {
+        cleanSingleVertice(v);
+    }
+    v->type = type;
+    v->id = id;
+    v->weight = weight;
+    v->name = s;
+    v->invflags = inv;
     return 1;
 }
 
@@ -153,6 +179,18 @@ int BooleanDag::linkDAG()
 
 
 
+/* Setters */
+int BooleanDag::setPriority(int *arr)
+{
+    if (!prio)
+        prio = new int[size];
+    for (uint i = 0; i < size; ++i) {
+        prio[i] = arr[i];
+    }
+    return 1;
+}
+
+
 /* Vistors */
 uint BooleanDag::getsize()
 {
@@ -164,6 +202,11 @@ Vertice* BooleanDag::getvertice(uint id)
     return V+id;
 }
 
+int BooleanDag::getPriority(uint id)
+{
+    return prio[id];
+}
+
 void BooleanDag::traversePrint()
 {
     Vertice *v;
@@ -171,19 +214,19 @@ void BooleanDag::traversePrint()
     printf("--------Boolean Dag Traverse BEGIN--------\n\n");
     for (uint i = 0; i < size; ++i) {
         v = V+i;
-        printf("[Vertice No.%u] weight:%d\n", i+1, v->weight);
+        printf("[Vertice No.%u(%s)] weight:%d\n", i, v->name.c_str(), v->weight);
 
         printf("\tPredecessors:");
         for (uint j = 0; j < v->prednum; ++j) {
             e = *(v->predecessors+j);
-            printf(" %u(%d)", e->src->id+1, e->weight);
+            printf(" %u(%d)", e->src->id, e->weight);
         }
         printf("\n");
 
         printf("\tSuccessors:");
         for (uint j = 0; j < v->succnum; ++j) {
             e = *(v->successors+j);
-            printf(" %u(%d)", e->dest->id+1, e->weight);
+            printf(" %u(%d)", e->dest->id, e->weight);
         }
         printf("\n");
 

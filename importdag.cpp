@@ -1,20 +1,20 @@
 /**  
- * @file    importdag.h
+ * @file    importdag.cpp
  * @brief   Import a DAG in other forms
  * @author  Chenu Tang
- * @version 0.1
- * @date    2022-10-25
+ * @version 2.0
+ * @date    2022-11-09
  * @note    
  */
-#ifndef _IMPORTDAG_
-#define _IMPORTDAG_
 #include <string>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include "importdag.h"
 #include "booleandag.h"
 
+#define SRCWEIGHT   0
 #define INVWEIGHT   5
 #define ANDWEIGHT   5
 #define ORWEIGHT    5
@@ -27,7 +27,7 @@ using namespace std;
 
 typedef struct Node {
     string name;
-    bool leaf = false;       // false: intermediate nodes; true: leaf/root nodes
+    bool leaf = false;      // false: intermediate nodes; true: leaf/root nodes
     bool inv = false;       // false: origin; true: need an inverter
 } node;
 
@@ -59,6 +59,15 @@ void CheckOperand(node& a) {
     }
 }
 
+/**
+ * @brief verilog to booleandag
+ * 
+ * @param filename verilog file name
+ * @return BooleanDag* 
+ * @details 1'b0 -> No.0
+ *          x0, x1, ..., xt -> No.1, No.2, ..., No.t+1
+ *          nk, nk+1 ... -> No.t+2, No.t+3, ...
+ */
 BooleanDag *v2booleandag(const std::string &filename)
 {
     BooleanDag *G = new BooleanDag;
@@ -67,10 +76,10 @@ BooleanDag *v2booleandag(const std::string &filename)
     CheckFile((bool) iVerilog, filename);
     std::string line;
 
-    int x_num = 0;
-    int y_num = 0;
-    int n_shift = 0;
-    int n_num = 0;
+    uint x_num = 0;
+    uint y_num = 0;
+    uint n_shift = 0;
+    uint n_num = 0;
 
     while (getline(iVerilog, line)) {
         if (line.find("output") != std::string::npos) {
@@ -81,7 +90,15 @@ BooleanDag *v2booleandag(const std::string &filename)
             continue;
         } else if (line.find("wire") != std::string::npos) {
             n_num = count(line.begin(), line.end(), 'n');
-            G->init(n_num);
+            G->init(n_num + x_num + 1);
+
+            /* Add 1'b0 and xi to DAG */
+            G->addVertice(0, SRCWEIGHT, "1'b0");
+            for (uint i = 1u; i <= x_num; ++i) {
+                std::string x = "x";
+                x += std::to_string(i-1);
+                G->addVertice(i, SRCWEIGHT, x);
+            }
             int pos = line.find_first_of('n');
             pos++;
             std::string num_string;
@@ -107,42 +124,43 @@ BooleanDag *v2booleandag(const std::string &filename)
             dest.name += lhs[temp];
             temp++;
         }
-        uint destid = atoi(dest.name.c_str()+1) - n_shift;
+        uint destid = atoi(dest.name.c_str()+1) - n_shift + x_num + 1;
 
         int num_operands = CountOperands(rhs);
         // case 1: assign a = (~)b
+        int inv = 0;
         if (num_operands == 0) {
-            G->addVertice(destid, INVWEIGHT);
             temp = rhs.find_first_not_of(' ');
             while (rhs[temp] != ' ') {
                 operand[0].name += rhs[temp];
                 temp++;
             }
             CheckOperand(operand[0]);   // set inv and name(remove '~' if exist)
+            inv |= operand[0].inv ? (1<<0) : 0;
+            G->addVertice(destid, INVWEIGHT, VINV, inv, dest.name);
 
             // rhs is a constant
-            if (operand[0].name.find("'b") == std::string::npos && operand[0].name[0] == 'n') {
-                G->addEdge(atoi(operand[0].name.c_str()+1) - n_shift, destid, EDGEWEIGHT);
+            if (operand[0].name[0] == 'n') {
+                G->addEdge(atoi(operand[0].name.c_str()+1) - n_shift + x_num + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[0].name[0] == 'x') {
+                G->addEdge(atoi(operand[0].name.c_str()+1) + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[0].name.find("1'b") != std::string::npos) {
+                G->addEdge(0, destid, EDGEWEIGHT);
             }
         }
 
         // case 2: 2-input gate
         else if (num_operands == 1) {
             std::string node_shape = "circle";
-            if (line.find('&') != std::string::npos) {
-                G->addVertice(destid, ANDWEIGHT);
-            } else if (line.find('^') != std::string::npos) {
-                G->addVertice(destid, XORWEIGHT);
-            } else if (line.find('|') != std::string::npos) {
-                G->addVertice(destid, ORWEIGHT);
-            }
-
             temp = rhs.find_first_not_of(' ');
             while (rhs[temp] != ' ') {
                 operand[0].name += rhs[temp];
                 temp++;
             }
             CheckOperand(operand[0]);
+            inv |= operand[0].inv ? (1<<0) : 0;
 
             temp += 3;
             while (rhs[temp] != ' ' && rhs[temp] != ';') {
@@ -150,25 +168,46 @@ BooleanDag *v2booleandag(const std::string &filename)
                 temp++;
             }
             CheckOperand(operand[1]);
+            inv |= operand[1].inv ? (1<<1) : 0;
 
-            if (operand[0].name.find("'b") == std::string::npos && operand[0].name[0] == 'n') {
-                G->addEdge(atoi(operand[0].name.c_str()+1) - n_shift, destid, EDGEWEIGHT);
+            if (line.find('&') != std::string::npos) {
+                G->addVertice(destid, ANDWEIGHT, VAND, inv, dest.name);
+            } else if (line.find('^') != std::string::npos) {
+                G->addVertice(destid, XORWEIGHT, VXOR, inv, dest.name);
+            } else if (line.find('|') != std::string::npos) {
+                G->addVertice(destid, ORWEIGHT, VOR, inv, dest.name);
             }
 
-            if (operand[1].name.find("'b") == std::string::npos && operand[1].name[0] == 'n') {
-                G->addEdge(atoi(operand[1].name.c_str()+1) - n_shift, destid, EDGEWEIGHT);
+            if (operand[0].name[0] == 'n') {
+                G->addEdge(atoi(operand[0].name.c_str()+1) - n_shift + x_num + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[0].name[0] == 'x') {
+                G->addEdge(atoi(operand[0].name.c_str()+1) + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[0].name.find("1'b") != std::string::npos) {
+                G->addEdge(0, destid, EDGEWEIGHT);
+            }
+
+            if (operand[1].name[0] == 'n') {
+                G->addEdge(atoi(operand[1].name.c_str()+1) - n_shift + x_num + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[1].name[0] == 'x') {
+                G->addEdge(atoi(operand[1].name.c_str()+1) + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[1].name.find("1'b") != std::string::npos) {
+                G->addEdge(0, destid, EDGEWEIGHT);
             }
         }
 
         // case 3: 3 input XOR gate
         else if (num_operands == 2 && line.find('^') != std::string::npos) {
-            G->addVertice(destid, XOR3WEIGHT);
             temp = rhs.find_first_not_of(' ');
             while (rhs[temp] != ' ') {
                 operand[0].name += rhs[temp];
                 temp++;
             }
             CheckOperand(operand[0]);
+            inv |= operand[0].inv ? (1<<0) : 0;
 
             temp += 3;
             while (rhs[temp] != ' ' && rhs[temp] != ';') {
@@ -176,28 +215,51 @@ BooleanDag *v2booleandag(const std::string &filename)
                 temp++;
             }
             CheckOperand(operand[1]);
+            inv |= operand[1].inv ? (1<<1) : 0;
 
             temp += 3;
             while (rhs[temp] != ' ' && rhs[temp] != ';') {
                 operand[2].name += rhs[temp];
                 temp++;
             }
+            CheckOperand(operand[2]);
+            inv |= operand[2].inv ? (1<<2) : 0;
+
+            G->addVertice(destid, XOR3WEIGHT, VXOR3, inv, dest.name);
 
             // the third one is a constant
-            if (operand[0].name.find("'b") == std::string::npos && operand[0].name[0] == 'n') {
-                G->addEdge(atoi(operand[0].name.c_str()+1) - n_shift, destid, EDGEWEIGHT);
+            if (operand[0].name[0] == 'n') {
+                G->addEdge(atoi(operand[0].name.c_str()+1) - n_shift + x_num + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[0].name[0] == 'x') {
+                G->addEdge(atoi(operand[0].name.c_str()+1) + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[0].name.find("1'b") != std::string::npos) {
+                G->addEdge(0, destid, EDGEWEIGHT);
             }
 
-            if (operand[1].name.find("'b") == std::string::npos && operand[1].name[0] == 'n') {
-                G->addEdge(atoi(operand[1].name.c_str()+1) - n_shift, destid, EDGEWEIGHT);
+            if (operand[1].name[0] == 'n') {
+                G->addEdge(atoi(operand[1].name.c_str()+1) - n_shift + x_num + 1, destid, EDGEWEIGHT);
             }
-            if (operand[2].name.find("'b") == std::string::npos && operand[2].name[0] == 'n') {
-                G->addEdge(atoi(operand[2].name.c_str()+1) - n_shift, destid, EDGEWEIGHT);
+            else if (operand[1].name[0] == 'x') {
+                G->addEdge(atoi(operand[1].name.c_str()+1) + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[1].name.find("1'b") != std::string::npos) {
+                G->addEdge(0, destid, EDGEWEIGHT);
+            }
+
+            if (operand[2].name[0] == 'n') {
+                G->addEdge(atoi(operand[2].name.c_str()+1) - n_shift + x_num + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[2].name[0] == 'x') {
+                G->addEdge(atoi(operand[2].name.c_str()+1) + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[2].name.find("1'b") != std::string::npos) {
+                G->addEdge(0, destid, EDGEWEIGHT);
             }
         }
         // Otherwise: majority gate, doesn't need conversion
         else {
-            G->addVertice(destid, MAJWEIGHT);
             int temp = 0;
             while (rhs[temp] == ' ' || rhs[temp] == '(') {
                 temp++;
@@ -207,6 +269,7 @@ BooleanDag *v2booleandag(const std::string &filename)
                 temp++;
             }
             CheckOperand(operand[0]);
+            inv |= operand[0].inv ? (1<<0) : 0;
 
             while (rhs[temp] == ' ' || rhs[temp] == '&') {
                 temp++;
@@ -216,6 +279,7 @@ BooleanDag *v2booleandag(const std::string &filename)
                 temp++;
             }
             CheckOperand(operand[1]);
+            inv |= operand[1].inv ? (1<<1) : 0;
 
             while (rhs[temp] != '&') {
                 temp++;
@@ -226,18 +290,39 @@ BooleanDag *v2booleandag(const std::string &filename)
                 temp++;
             }
             CheckOperand(operand[2]);
+            inv |= operand[2].inv ? (1<<2) : 0;
 
-            if (operand[0].name.find("'b") == std::string::npos && operand[0].name[0] == 'n') {
-                G->addEdge(atoi(operand[0].name.c_str()+1) - n_shift, destid, EDGEWEIGHT);
+            G->addVertice(destid, MAJWEIGHT, VMAJ, inv, dest.name);
+
+            if (operand[0].name[0] == 'n') {
+                G->addEdge(atoi(operand[0].name.c_str()+1) - n_shift + x_num + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[0].name[0] == 'x') {
+                G->addEdge(atoi(operand[0].name.c_str()+1) + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[0].name.find("1'b") != std::string::npos) {
+                G->addEdge(0, destid, EDGEWEIGHT);
             }
 
-            if (operand[1].name.find("'b") == std::string::npos && operand[1].name[0] == 'n') {
-                G->addEdge(atoi(operand[1].name.c_str()+1) - n_shift, destid, EDGEWEIGHT);
+            if (operand[1].name[0] == 'n') {
+                G->addEdge(atoi(operand[1].name.c_str()+1) - n_shift + x_num + 1, destid, EDGEWEIGHT);
             }
-            if (operand[2].name.find("'b") == std::string::npos && operand[2].name[0] == 'n') {
-                G->addEdge(atoi(operand[2].name.c_str()+1) - n_shift, destid, EDGEWEIGHT);
+            else if (operand[1].name[0] == 'x') {
+                G->addEdge(atoi(operand[1].name.c_str()+1) + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[1].name.find("1'b") != std::string::npos) {
+                G->addEdge(0, destid, EDGEWEIGHT);
             }
 
+            if (operand[2].name[0] == 'n') {
+                G->addEdge(atoi(operand[2].name.c_str()+1) - n_shift + x_num + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[2].name[0] == 'x') {
+                G->addEdge(atoi(operand[2].name.c_str()+1) + 1, destid, EDGEWEIGHT);
+            }
+            else if (operand[2].name.find("1'b") != std::string::npos) {
+                G->addEdge(0, destid, EDGEWEIGHT);
+            }
         }
     }
 
@@ -246,5 +331,3 @@ BooleanDag *v2booleandag(const std::string &filename)
     return G;
 }
 
-
-#endif

@@ -23,11 +23,24 @@ int main()
     // G.traversePrint();
 
     ListScheduler S;
-    Processors *P = S.HEFT(&G, 3);
-    P->printScheduleByPE();
-    P->printScheduleByTasks();
-    printf("The makespan = %d\n", P->getmakespan());
-    delete P;
+    StageProcessors *PU = S.HEFTU(&G, 3);
+    StageProcessors *PD = S.HEFTD(&G, 3);
+    StageProcessors *PUD = S.HEFTUD(&G, 3);
+    PU->printScheduleByPE();
+    PU->printScheduleByTasks();
+    printf("The makespan = %d\n", PU->getmakespan());
+
+    PD->printScheduleByPE();
+    PD->printScheduleByTasks();
+    printf("The makespan = %d\n", PD->getmakespan());
+
+    PUD->printScheduleByPE();
+    PUD->printScheduleByTasks();
+    printf("The makespan = %d\n", PUD->getmakespan());
+    delete PU;
+    delete PD;
+    delete PUD;
+
     return 0;
 }
 

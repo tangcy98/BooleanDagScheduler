@@ -2,8 +2,8 @@
  * @file    list-scheduler.h
  * @brief   List scheduling implemetation
  * @author  Chenu Tang
- * @version 0.1
- * @date    2022-10-17
+ * @version 2.0
+ * @date    2022-11-09
  * @note    
  */
 #ifndef _LISTSCHEDULER_
@@ -16,9 +16,9 @@
 class ListScheduler {
 
 public:
-    Processors* HEFTU(BooleanDag *g, uint pnum);
-    Processors* HEFTD(BooleanDag *g, uint pnum);
-    Processors* HEFTUD(BooleanDag *g, uint pnum);
+    StageProcessors* HEFTU(BooleanDag *g, uint pnum);
+    StageProcessors* HEFTD(BooleanDag *g, uint pnum);
+    StageProcessors* HEFTUD(BooleanDag *g, uint pnum);
 };
 
 

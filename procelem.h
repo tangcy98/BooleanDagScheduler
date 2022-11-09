@@ -2,8 +2,8 @@
  * @file    procelem.h
  * @brief   Processing Element Definition
  * @author  Chenu Tang
- * @version 0.1
- * @date    2022-10-18
+ * @version 2.0
+ * @date    2022-11-09
  * @note    
  */
 #ifndef _PROCELEM_
@@ -11,10 +11,11 @@
 #include <map>
 #include <vector>
 #include <cstdio>
+#include "instruction.h"
 #include "booleandag.h"
 
 
-class Processors;
+class StageProcessors;
 typedef struct Assignment {
     uint pid;   ///< pe id
     uint tid;   ///< task(vertice) id
@@ -23,43 +24,70 @@ typedef struct Assignment {
     Assignment() : pid(0), tid(0), starttime(0), finishtime(0) {};
 } Assignment;
 
+
+int checkPEAvail(); ///< If PE state allow a newly assigned task
+int updatePEState();    ///< update PE state
+
+
 ///< @brief record real-time state of a single PE
 typedef struct _PE {
     uint id;            ///< unique id
     std::vector<Assignment*>    tasks;  ///< Assigned tasks
     int eft;            ///< earlist finish time
-    _PE() : id(0), eft(0) {};
+    std::map<uint, uint> cache;     ///< <taskid, index> record cached id of nodes
+    uint line[BLOCKROW];            ///< index -> taskid
+    uint smallestfreeidx;
+    uint overwriteflag;
+    _PE() : id(0), eft(0), smallestfreeidx(0), overwriteflag(0) {for(uint i=0;i<BLOCKROW;++i)line[i]=UINT_MAX;};
 } _PE;
 
-class Processors {
+
+
+class StageProcessors {
     uint pnum;      ///< number of processors
-    std::vector<Assignment> schedule;
+    std::map<uint, Assignment> schedule;    ///< <taskid, Assignment>
     _PE *PE;
     int makespan;
+    std::vector<InstructionNameSpace::Instruction> inst;
 
 public:
+    StageProcessors *next;
+    StageProcessors *prior;
     /* Constructor & Destructor */
-    Processors();
-    // ~Processors();
+    StageProcessors();
+    // ~StageProcessors();
 
     /* Construction related */
-    int init(uint n, uint tn);
+    int init(uint n);  // unlimited memory for DAG with certain number of tasks
     int clean();
 
     /* TaskAssignment */
-    int assignTask(uint taskid, uint PEid, int starttime, int finishtime);
+    int checkPlaceable(BooleanDag *G, uint peid, uint taskid);
+    int assignTask(BooleanDag* g, uint taskid, uint PEid, int starttime, int finishtime);
+    int releaseMem(BooleanDag* g, uint taskid, int *priority);
+    int releaseMem(BooleanDag* g, uint taskid, bool *assigned);
+    int assignFinish();
+    int storeCache();
+
+    /* Setters */
+    int removeStoreInst(uint taskid);
 
     /* Visitors */
     int getmakespan();
+    uint getpnum();
     _PE* getPE(uint id);
+    StageProcessors* getNext();
+    StageProcessors* getPrior();
     uint getPEByTask(uint taskid);
     uint getTaskByPE(uint PEid, int n = -1);
+    uint getLine(uint taskid);
+    uint getOverwritepos(uint peid);
     Assignment* getAssignmentByTask(uint taskid);
-    Assignment* getAssignmentByPE(uint PEid, int n = -1);
 
-    /* PrintSchedule */
+    /* Printers */
     void printScheduleByTasks();
     void printScheduleByPE();
+    void printInstructions(int stage=0);
 };
 
 #endif

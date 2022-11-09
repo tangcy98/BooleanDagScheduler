@@ -2,8 +2,8 @@
  * @file    list-scheduler.cpp
  * @brief   List scheduling implemetation
  * @author  Chenu Tang
- * @version 0.1
- * @date    2022-10-17
+ * @version 2.0
+ * @date    2022-11-09
  * @note    
  */
 #include "list-scheduler.h"
@@ -11,12 +11,12 @@
 using namespace Priority;
 
 
-Processors* ListScheduler::HEFTU(BooleanDag *g, uint pnum)
+StageProcessors* ListScheduler::HEFTU(BooleanDag *g, uint pnum)
 {
     int *rank;
     uint size = g->getsize();
-    Processors *P = new Processors;
-    P->init(pnum, size);
+    StageProcessors *P = new StageProcessors;
+    P->init(pnum);
 
     std::multimap<int, uint, std::greater<int>> ranklist;   ///< <rank, taskid>
     rank = ranku(g);
@@ -61,7 +61,7 @@ Processors* ListScheduler::HEFTU(BooleanDag *g, uint pnum)
             }
         }
 
-        P->assignTask(taskid, pid, est, est+v->weight);
+        P->assignTask(g, taskid, pid, est, est+v->weight);
         ranklist.erase(iter);
         delete[] predpeid;
         delete[] predfinishtime;
@@ -72,12 +72,12 @@ Processors* ListScheduler::HEFTU(BooleanDag *g, uint pnum)
     return P;
 }
 
-Processors* ListScheduler::HEFTD(BooleanDag *g, uint pnum)
+StageProcessors* ListScheduler::HEFTD(BooleanDag *g, uint pnum)
 {
     int *rank;
     uint size = g->getsize();
-    Processors *P = new Processors;
-    P->init(pnum, size);
+    StageProcessors *P = new StageProcessors;
+    P->init(pnum);
 
     std::multimap<int, uint, std::less<int>> ranklist;   ///< <rank, taskid>
     rank = rankd(g);
@@ -122,7 +122,7 @@ Processors* ListScheduler::HEFTD(BooleanDag *g, uint pnum)
             }
         }
 
-        P->assignTask(taskid, pid, est, est+v->weight);
+        P->assignTask(g, taskid, pid, est, est+v->weight);
         ranklist.erase(iter);
         delete[] predpeid;
         delete[] predfinishtime;
@@ -133,12 +133,12 @@ Processors* ListScheduler::HEFTD(BooleanDag *g, uint pnum)
     return P;
 }
 
-Processors* ListScheduler::HEFTUD(BooleanDag *g, uint pnum)
+StageProcessors* ListScheduler::HEFTUD(BooleanDag *g, uint pnum)
 {
     int *urank, *drank;
     uint size = g->getsize();
-    Processors *P = new Processors;
-    P->init(pnum, size);
+    StageProcessors *P = new StageProcessors;
+    P->init(pnum);
 
     std::multimap<int, uint, std::less<int>> ranklist;   ///< <rank, taskid>
     drank = rankd(g);
@@ -184,7 +184,7 @@ Processors* ListScheduler::HEFTUD(BooleanDag *g, uint pnum)
             }
         }
 
-        P->assignTask(taskid, pid, est, est+v->weight);
+        P->assignTask(g, taskid, pid, est, est+v->weight);
         ranklist.erase(iter);
         delete[] predpeid;
         delete[] predfinishtime;
