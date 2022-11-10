@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "list-scheduler.h"
+#include "../src/list-scheduler.h"
 
 using namespace Priority;
 

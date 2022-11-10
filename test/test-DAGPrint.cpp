@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "booleandag.h"
-#include "priority.h"
+#include "../src/booleandag.h"
+#include "../src/priority.h"
 
 using namespace Priority;
 

@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "importdag.h"
-#include "list-scheduler.h"
+#include "../src/importdag.h"
+#include "../src/list-scheduler.h"
 
 using namespace Priority;
 
@@ -41,7 +41,7 @@ int addV2G(BooleanDag *G, Vertice *v, bool *mark)
 
 int main()
 {
-    BooleanDag *G = v2booleandag("test.v");
+    BooleanDag *G = v2booleandag("../benchmark/test.v");
     BooleanDag G1;
     uint Gsize = G->getsize() / 2;
     uint size = Gsize / 2;

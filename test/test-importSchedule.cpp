@@ -1,14 +1,14 @@
 #include <stdio.h>
-#include "../booleandag.h"
-#include "../importdag.h"
-#include "../scheduler.h"
-#include "../priority.h"
+#include "../src/booleandag.h"
+#include "../src/importdag.h"
+#include "../src/scheduler.h"
+#include "../src/priority.h"
 
 using namespace Priority;
 
 int main()
 {
-    BooleanDag *G = v2booleandag("test.v");
+    BooleanDag *G = v2booleandag("../benchmark/test.v");
 
     scheduleDAG(G, 32u);
 
