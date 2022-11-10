@@ -9,7 +9,7 @@
 
 #ifndef __MEMORY__
 #define __MEMORY__
-
+#include <climits>
 
 
 #define MESHSIZE 64     ///< number of mesh
