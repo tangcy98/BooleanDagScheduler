@@ -12,21 +12,16 @@
 #include "placement.h"
 #include "procelem.h"
 
-/**
- * @brief Get next stage
- * 
- * @param G BooleanDag
- * @param offset priority beginning offset
- * @return uint next offset
- */
 
-int scheduleDAG(BooleanDag *G, uint workload)
+Schedule scheduleDAG(BooleanDag *G, uint workload)
 {
+    Schedule sche;
+    sche.chunksize = workload;
     int *priority;
     int pnum = MESHSIZE / workload;
     int totalms = 0;
     if (pnum <= 0) {
-        return -1;
+        exit(-1);
     }
     uint size = G->getsize();
     priority = Priority::ranku(G);
@@ -73,15 +68,22 @@ int scheduleDAG(BooleanDag *G, uint workload)
         p = &((*p)->next);
     }
 
-    p = &stages;
-    for (uint i =0u; i < stagecnt; ++i) {
-        (*p)->printInstructions(i);
-        p = &((*p)->next);
-    }
-
     printf("total makespan: %d\n", totalms);
 
     delete[] assigned;
     delete[] priority;
-    return 1;
+    sche.makespan = totalms;
+    sche.p = stages;
+    return sche;
+}
+
+void printInst(Schedule *s, uint offset, uint chunksize)
+{
+    StageProcessors **p = &(s->p);
+    int stage = 0;
+    printf("Offset: %d, Chunksize: %d\n", offset, chunksize);
+    while ((*p)) {
+        (*p)->printInstructions(stage++);
+        p = &(*p)->next;
+    }
 }

@@ -18,6 +18,7 @@
                 (x&0x00008000?15:(x&0x00004000?14:(x&0x00002000?13:(x&0x00001000?12:(x&0x00000800?11:(x&0x00000400?10:(x&0x00000200?9:(x&0x00000100?8: \
                 (x&0x00000080?7:(x&0x00000040?6:(x&0x00000020?5:(x&0x00000010?4:(x&0x00000008?3:(x&0x00000004?2:(x&0x00000002?1:(x&0x00000001?0:-1))))))))))))))))))))))))))))))))
 
+#define NPOWEROF2(x) (1<<x)
 
 class CutSolver {
 private:
@@ -28,13 +29,18 @@ private:
     int *start;
     int *index;
     double *values;
-    double *rowlb;
     double *rowub;
     double *collb;
     double *colub;
 public:
     CutSolver();
-    
+    CutSolver(const double workload, const uint cols, const double *w);
+    ~CutSolver();
+
+    // Visitors
+    const double *  getSolution();
+    double  getObjValue();
+    bool    isOptimal();
 };
 
 #endif

@@ -14,4 +14,12 @@
 ///< Explore 2^i's cost and find the best i
 
 
-int scheduleDAG(BooleanDag *G, uint workload);
+typedef struct Schedule {
+    int makespan;
+    int chunksize;
+    StageProcessors *p;
+} Schedule;
+
+Schedule scheduleDAG(BooleanDag *G, uint workload);
+
+void printInst(Schedule *s, uint offset, uint chunksize);
