@@ -11,15 +11,15 @@
 #include "booleandag.h"
 namespace Priority {
     /* Basic Functions */
-    int* ranku(BooleanDag *g, int *value=NULL);     ///< calculate the upward rank of each vertice in a DAG (static usually)
-    int* bleavel(BooleanDag *g, int *value=NULL);   ///< calculate the bottom level of each vertice in a DAG - same as ranku (static usually)
-    int* rankd(BooleanDag *g, int *value=NULL);     ///< calculate the downward rank of each vertice in a DAG
-    int* tleavel(BooleanDag *g, int *value=NULL);   ///< calculate the top level of each vertice in a DAG - same as rankd
+    bigint* ranku(BooleanDag *g, bigint *value=NULL);     ///< calculate the upward rank of each vertice in a DAG (static usually)
+    bigint* bleavel(BooleanDag *g, bigint *value=NULL);   ///< calculate the bottom level of each vertice in a DAG - same as ranku (static usually)
+    bigint* rankd(BooleanDag *g, bigint *value=NULL);     ///< calculate the downward rank of each vertice in a DAG
+    bigint* tleavel(BooleanDag *g, bigint *value=NULL);   ///< calculate the top level of each vertice in a DAG - same as rankd
 
     /* Recursive Functions */
-    int ranku(BooleanDag *g, uint id, int *value);      ///< calculate the upward rank of a vertice in a DAG in a recursive way
-    int bleavel(BooleanDag *g, uint id, int *value);    ///< calculate the bottom level of a vertice in a DAG in a recursive way
-    int rankd(BooleanDag *g, uint id, int *value);      ///< calculate the downward rank of a vertice in a DAG in a recursive way
-    int tleavel(BooleanDag *g, uint id, int *value);    ///< calculate the top level of a vertice in a DAG in a recursive way
+    bigint ranku(BooleanDag *g, uint id, bigint *value);      ///< calculate the upward rank of a vertice in a DAG in a recursive way
+    bigint bleavel(BooleanDag *g, uint id, bigint *value);    ///< calculate the bottom level of a vertice in a DAG in a recursive way
+    bigint rankd(BooleanDag *g, uint id, bigint *value);      ///< calculate the downward rank of a vertice in a DAG in a recursive way
+    bigint tleavel(BooleanDag *g, uint id, bigint *value);    ///< calculate the top level of a vertice in a DAG in a recursive way
 }
 #endif

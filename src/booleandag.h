@@ -35,7 +35,7 @@ typedef struct Vertice {
     uint id;                ///< unique id, start from 0
     std::string name;       ///< optional name
     VerticeType type;
-    int weight;             ///< computation cost
+    bigint weight;             ///< computation cost
     Edge **predecessors;    ///< parents lists (must before this vertice)
     Edge **successors;      ///< children lists (must after this vertice)
     uint prednum;           ///< number of predecessors
@@ -48,7 +48,7 @@ typedef struct Vertice {
 typedef struct Edge {
     Vertice *src;           ///< source vertice
     Vertice *dest;          ///< destination vertice
-    int weight;             ///< communication cost
+    bigint weight;             ///< communication cost
     Edge() : src(NULL), dest(NULL), weight(-1) {};
 } Edge;
 
@@ -60,7 +60,7 @@ private:
     Vertice *V;             ///< vertice list
     std::vector<Edge> E;    ///< edge list
     uint size;              ///< length of the vertice list / number of the vertices
-    int *prio;              ///< priority list
+    bigint *prio;              ///< priority list
 
 public:
     /* Constructor & Destructor */
@@ -72,20 +72,20 @@ public:
     int init();
     int init(uint n);
     int destroy();  ///< WIP
-    int addVertice(int weight, const std::string &s="");
-    int addVertice(uint id, int weight, const std::string &s="");
-    int addVertice(uint id, int weight, VerticeType type, int inv, const std::string &s="");
-    int addEdge(uint src, uint dest, int weight);
+    int addVertice(bigint weight, const std::string &s="");
+    int addVertice(uint id, bigint weight, const std::string &s="");
+    int addVertice(uint id, bigint weight, VerticeType type, int inv, const std::string &s="");
+    int addEdge(uint src, uint dest, bigint weight);
     int linkDAG();
 
 
     /* Setters */
-    int setPriority(int *arr);
+    int setPriority(bigint *arr);
 
     /* Vistors */
     uint getsize();
     Vertice* getvertice(uint id);
-    int getPriority(uint id);
+    bigint getPriority(uint id);
 
 
     void traversePrint();

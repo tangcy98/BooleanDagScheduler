@@ -17,16 +17,16 @@ Schedule scheduleDAG(BooleanDag *G, uint workload)
 {
     Schedule sche;
     sche.chunksize = workload;
-    int *priority;
+    bigint *priority;
     int pnum = MESHSIZE / workload;
-    int totalms = 0;
+    bigint totalms = 0;
     if (pnum <= 0) {
         exit(-1);
     }
     uint size = G->getsize();
     priority = Priority::ranku(G);
     G->setPriority(priority);
-    std::multimap<int, uint, std::greater<int>> ranklist;   ///< <rank, taskid>
+    std::multimap<bigint, uint, std::greater<bigint>> ranklist;   ///< <rank, taskid>
     bool *assigned = new bool[size];;
     for (uint i = 0; i < G->getsize(); ++i) {
         ranklist.insert(std::make_pair(priority[i], i));    ///< ordered list(map)
@@ -40,7 +40,7 @@ Schedule scheduleDAG(BooleanDag *G, uint workload)
 
     while (ranklist.size()) {
         ++stagecnt;
-        std::multimap<int, uint, std::greater<int>>::iterator iter = ranklist.begin();
+        std::multimap<bigint, uint, std::greater<bigint>>::iterator iter = ranklist.begin();
         uint taskid;
         uint pid = 0;
         *p = new StageProcessors;
@@ -63,16 +63,29 @@ Schedule scheduleDAG(BooleanDag *G, uint workload)
         // (*p)->printScheduleByPE();
         // (*p)->printInstructions(stagecnt-1);
         totalms += (*p)->getmakespan();
-        printf("makespan: %d\n", (*p)->getmakespan());
+        // printf("makespan: %lld\n", (*p)->getmakespan());
         prior = *p;
         p = &((*p)->next);
     }
 
-    printf("total makespan: %d\n", totalms);
+    sche.latency = 0;
+    sche.energy = 0;
+    p = &stages;
+    while ((*p)) {
+        (*p)->calcLatency();
+        (*p)->calcEnergy();
+        sche.latency += (*p)->getLatency();
+        sche.energy += (*p)->getEnergy();
+        // printf("%lld %lf\n", sche.latency, sche.energy);
+        p = &((*p)->next);
+
+    }
+
+    // printf("total makespan: %lld\n", totalms);
 
     delete[] assigned;
     delete[] priority;
-    sche.makespan = totalms;
+
     sche.p = stages;
     return sche;
 }

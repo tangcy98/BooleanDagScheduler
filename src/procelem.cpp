@@ -9,6 +9,7 @@
 
 
 #include "procelem.h"
+#include <string.h>
 
 
 
@@ -17,6 +18,12 @@ StageProcessors::StageProcessors()
     pnum = 0;
     PE = NULL;
     makespan = 0;
+    loadlatency = NULL;
+    midlatency = NULL;
+    storelatency = NULL;
+    loadlatency = NULL;
+    midlatency = NULL;
+    storelatency = NULL;
     next = NULL;
     prior = NULL;
 }
@@ -34,6 +41,12 @@ int StageProcessors::init(uint pn)
         PE[i].id = i;
     }
     makespan = 0;
+    loadlatency = new bigint[pn];
+    midlatency = new bigint[pn];
+    storelatency = new bigint[pn];
+    loadenergy = new double[pn];
+    midenergy = new double[pn];
+    storeenergy = new double[pn];
     next = NULL;
     prior = NULL;
     return 1;
@@ -44,10 +57,34 @@ int StageProcessors::clean()
     if (PE) {
         delete[] PE;
     }
+    if (loadlatency) {
+        delete[] loadlatency;
+    }
+    if (midlatency) {
+        delete[] midlatency;
+    }
+    if (storelatency) {
+        delete[] storelatency;
+    }
+    if (loadenergy) {
+        delete[] loadenergy;
+    }
+    if (midenergy) {
+        delete[] midenergy;
+    }
+    if (storeenergy) {
+        delete[] storeenergy;
+    }
     pnum = 0;
     schedule.clear();
     PE = NULL;
     makespan = 0;
+    loadlatency = NULL;
+    midlatency = NULL;
+    storelatency = NULL;
+    loadlatency = NULL;
+    midlatency = NULL;
+    storelatency = NULL;
     next = NULL;
     prior = NULL;
     inst.clear();
@@ -115,7 +152,7 @@ int StageProcessors::checkPlaceable(BooleanDag *G, uint peid, uint taskid)
 }
 
 // TODO: Check conflict with existing assignment
-int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, int starttime, int finishtime)
+int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint starttime, bigint finishtime)
 {
     Assignment a;
     a.pid = PEid;
@@ -269,11 +306,11 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, int start
 
 // int checkAllFinish;
 
-int StageProcessors::releaseMem(BooleanDag* g, uint taskid, int *priority)
+int StageProcessors::releaseMem(BooleanDag* g, uint taskid, bigint *priority)
 {
     Vertice *v = g->getvertice(taskid);
     uint prednum = v->prednum;
-    int prio = priority[taskid];
+    bigint prio = priority[taskid];
     for (uint i = 0u; i < prednum; ++i) {
         Vertice *pred = v->predecessors[i]->src;
         uint succnum = pred->succnum;
@@ -355,6 +392,80 @@ int StageProcessors::assignFinish()
 }
 
 
+int StageProcessors::calcLatency()
+{
+    memset((void*)(loadlatency), 0, pnum*sizeof(bigint));
+    memset((void*)(midlatency), 0, pnum*sizeof(bigint));
+    memset((void*)(storelatency), 0, pnum*sizeof(bigint));
+    uint threads = MESHSIZE / pnum;
+    std::vector<InstructionNameSpace::Instruction>::iterator it;
+    for (it = inst.begin(); it < inst.end(); ++it) {
+        if (it->op == InstructionNameSpace::LOAD) {
+            loadlatency[it->dest/BLOCKROW] += LOADLATENCY * threads;
+        }
+        else if (it->op == InstructionNameSpace::STORE) {
+            storelatency[it->src[0]/BLOCKROW] += STORELATENCY * threads;
+        }
+        else if (it->op == InstructionNameSpace::COPY) {
+            uint p1, p2, level;
+            p1 = it->src[0] / BLOCKROW;
+            p2 = it->dest / BLOCKROW;
+            level = getCommLevel(pnum, p1, p2);
+            double max = midlatency[p1] > midlatency[p2] ? midlatency[p1] : midlatency[p2];
+            uint maxthreads = maxcopythread[level] > threads ? threads : maxcopythread[level];
+            if (level > 0) {
+                max += commweight[level] * (threads / maxthreads);
+            }
+            else {
+                max += OPLATENCY;
+            }
+            midlatency[p1] = max;
+            midlatency[p2] = max;
+        }
+        else {
+            uint p = it->src[0] / BLOCKROW;
+            midlatency[p] += OPLATENCY;
+        }
+    }
+    return 1;
+}
+
+int StageProcessors::calcEnergy()
+{
+    memset((void*)(loadenergy), 0, pnum*sizeof(double));
+    memset((void*)(midenergy), 0, pnum*sizeof(double));
+    memset((void*)(storeenergy), 0, pnum*sizeof(double));
+    uint threads = MESHSIZE / pnum;
+    std::vector<InstructionNameSpace::Instruction>::iterator it;
+    for (it = inst.begin(); it < inst.end(); ++it) {
+        if (it->op == InstructionNameSpace::LOAD) {
+            loadenergy[it->dest/BLOCKROW] += LOADLATENCY * threads;
+        }
+        else if (it->op == InstructionNameSpace::STORE) {
+            storeenergy[it->src[0]/BLOCKROW] += STORELATENCY * threads;
+        }
+        else if (it->op == InstructionNameSpace::COPY) {
+            uint p1, p2, level;
+            p1 = it->src[0] / BLOCKROW;
+            p2 = it->dest / BLOCKROW;
+            level = getCommLevel(pnum, p1, p2);
+            if (level > 0) {
+                midenergy[p1] += readenergy[level] * threads;
+                midenergy[p2] += writeenergy[level] * threads;
+            }
+            else {
+                midenergy[p1] += OPENERGY * threads;
+            }
+        }
+        else {
+            uint p = it->src[0] / BLOCKROW;
+            midlatency[p] += OPENERGY * threads;
+        }
+    }
+    return 1;
+}
+
+
 /* Setters */
 int StageProcessors::removeStoreInst(uint taskid)
 {
@@ -371,9 +482,35 @@ int StageProcessors::removeStoreInst(uint taskid)
 
 
 /* Visitors */
-int StageProcessors::getmakespan()
+bigint StageProcessors::getmakespan()
 {
     return makespan;
+}
+
+bigint StageProcessors::getLatency()
+{
+    int i = 0;
+    bigint ll, ml, sl;
+
+    ll = 0;
+    ml = 0;
+    sl = 0;
+    for (uint i = 0u; i < pnum; ++i) {
+        ll += loadlatency[i];
+        ml = ml > midlatency[i] ? ml : midlatency[i];
+        sl += storelatency[i];
+    }
+    return ll + ml + sl;
+}
+
+double StageProcessors::getEnergy()
+{
+    double e = 0.0;
+    for (uint i = 0u; i < pnum; ++i) {
+        e += loadenergy[i] + midenergy[i] + storeenergy[i];
+    }
+    e += LEACKAGEENERGY * getLatency();
+    return e;
 }
 
 uint StageProcessors::getpnum()
@@ -452,7 +589,7 @@ void StageProcessors::printScheduleByTasks()
     Assignment *a;
     for (uint i = 0u; i < size; ++i) {
         a = getAssignmentByTask(i);
-        printf("    Task %u is assigned to PE No.%u. Start at %d. End at %d.\n", a->tid, a->pid, a->starttime, a->finishtime);
+        printf("    Task %u is assigned to PE No.%u. Start at %lld. End at %lld.\n", a->tid, a->pid, a->starttime, a->finishtime);
     }
     printf("--------Schedule of each Task END--------\n");
 }
@@ -467,7 +604,7 @@ void StageProcessors::printScheduleByPE()
         pe = PE+i;
         printf("No.%u PE's schedule:\n", i);
         for (ait = pe->tasks.begin(); ait != pe->tasks.end(); ++ait) {
-            printf("\t[Task No.%u] Start at %d. End at %d.\n", (*ait)->tid, (*ait)->starttime, (*ait)->finishtime);
+            printf("\t[Task No.%u] Start at %lld. End at %lld.\n", (*ait)->tid, (*ait)->starttime, (*ait)->finishtime);
         }
     }
     printf("--------Schedule of each PE END--------\n");

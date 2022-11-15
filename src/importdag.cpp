@@ -13,15 +13,16 @@
 #include <algorithm>
 #include "importdag.h"
 #include "booleandag.h"
+#include "memory.h"
 
 #define SRCWEIGHT   0
-#define INVWEIGHT   5
-#define ANDWEIGHT   5
-#define ORWEIGHT    5
-#define XORWEIGHT   5
-#define XOR3WEIGHT  5
-#define MAJWEIGHT   5
-#define EDGEWEIGHT  200
+#define INVWEIGHT   OPWEIGHT
+#define ANDWEIGHT   OPWEIGHT
+#define ORWEIGHT    OPWEIGHT
+#define XORWEIGHT   OPWEIGHT
+#define XOR3WEIGHT  OPWEIGHT
+#define MAJWEIGHT   OPWEIGHT
+#define EDGEWEIGHT  COMMWEIGHT
 
 using namespace std;
 

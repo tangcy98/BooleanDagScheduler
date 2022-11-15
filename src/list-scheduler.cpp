@@ -13,12 +13,12 @@ using namespace Priority;
 
 StageProcessors* ListScheduler::HEFTU(BooleanDag *g, uint pnum)
 {
-    int *rank;
+    bigint *rank;
     uint size = g->getsize();
     StageProcessors *P = new StageProcessors;
     P->init(pnum);
 
-    std::multimap<int, uint, std::greater<int>> ranklist;   ///< <rank, taskid>
+    std::multimap<bigint, uint, std::greater<bigint>> ranklist;   ///< <rank, taskid>
     rank = ranku(g);
 
     for (uint i = 0; i < size; ++i) {
@@ -26,8 +26,8 @@ StageProcessors* ListScheduler::HEFTU(BooleanDag *g, uint pnum)
     }
 
     while (ranklist.size()) {
-        std::multimap<int, uint, std::greater<int>>::iterator iter;
-        int est = INT_MAX;
+        std::multimap<bigint, uint, std::greater<bigint>>::iterator iter;
+        bigint est = INT_MAX;
         uint taskid;
         uint prednum;
         uint pid = 0u;
@@ -37,8 +37,8 @@ StageProcessors* ListScheduler::HEFTU(BooleanDag *g, uint pnum)
         Vertice *v = g->getvertice(taskid);
         prednum = v->prednum;
         uint *predpeid = new uint[prednum];
-        int *predfinishtime = new int[prednum];
-        int *predcommcost = new int[prednum];
+        bigint *predfinishtime = new bigint[prednum];
+        bigint *predcommcost = new bigint[prednum];
 
         // calculate each predecessors aft(eft) with consideration of communication
         for (uint i = 0u; i < prednum; ++i) {
@@ -50,9 +50,9 @@ StageProcessors* ListScheduler::HEFTU(BooleanDag *g, uint pnum)
             predcommcost[i] = e->weight;
         }
         for (uint i = 0; i < pnum; ++i) {
-            int avail = P->getPE(i)->eft;
+            bigint avail = P->getPE(i)->eft;
             for (uint j = 0u; j < prednum; ++j) {
-                int predt = predfinishtime[j] + (predpeid[j] == i ? 0 : predcommcost[j]);
+                bigint predt = predfinishtime[j] + (predpeid[j] == i ? 0 : predcommcost[j]);
                 avail = avail > predt ? avail : predt;
             }
             if (avail < est) {
@@ -74,12 +74,12 @@ StageProcessors* ListScheduler::HEFTU(BooleanDag *g, uint pnum)
 
 StageProcessors* ListScheduler::HEFTD(BooleanDag *g, uint pnum)
 {
-    int *rank;
+    bigint *rank;
     uint size = g->getsize();
     StageProcessors *P = new StageProcessors;
     P->init(pnum);
 
-    std::multimap<int, uint, std::less<int>> ranklist;   ///< <rank, taskid>
+    std::multimap<bigint, uint, std::less<bigint>> ranklist;   ///< <rank, taskid>
     rank = rankd(g);
 
     for (uint i = 0; i < size; ++i) {
@@ -87,8 +87,8 @@ StageProcessors* ListScheduler::HEFTD(BooleanDag *g, uint pnum)
     }
 
     while (ranklist.size()) {
-        std::multimap<int, uint, std::less<int>>::iterator iter;
-        int est = INT_MAX;
+        std::multimap<bigint, uint, std::less<bigint>>::iterator iter;
+        bigint est = INT_MAX;
         uint taskid;
         uint prednum;
         uint pid = 0u;
@@ -98,8 +98,8 @@ StageProcessors* ListScheduler::HEFTD(BooleanDag *g, uint pnum)
         Vertice *v = g->getvertice(taskid);
         prednum = v->prednum;
         uint *predpeid = new uint[prednum];
-        int *predfinishtime = new int[prednum];
-        int *predcommcost = new int[prednum];
+        bigint *predfinishtime = new bigint[prednum];
+        bigint *predcommcost = new bigint[prednum];
 
         // calculate each predecessors aft(eft) with consideration of communication
         for (uint i = 0u; i < prednum; ++i) {
@@ -111,9 +111,9 @@ StageProcessors* ListScheduler::HEFTD(BooleanDag *g, uint pnum)
             predcommcost[i] = e->weight;
         }
         for (uint i = 0; i < pnum; ++i) {
-            int avail = P->getPE(i)->eft;
+            bigint avail = P->getPE(i)->eft;
             for (uint j = 0u; j < prednum; ++j) {
-                int predt = predfinishtime[j] + (predpeid[j] == i ? 0 : predcommcost[j]);
+                bigint predt = predfinishtime[j] + (predpeid[j] == i ? 0 : predcommcost[j]);
                 avail = avail > predt ? avail : predt;
             }
             if (avail < est) {
@@ -135,12 +135,12 @@ StageProcessors* ListScheduler::HEFTD(BooleanDag *g, uint pnum)
 
 StageProcessors* ListScheduler::HEFTUD(BooleanDag *g, uint pnum)
 {
-    int *urank, *drank;
+    bigint *urank, *drank;
     uint size = g->getsize();
     StageProcessors *P = new StageProcessors;
     P->init(pnum);
 
-    std::multimap<int, uint, std::less<int>> ranklist;   ///< <rank, taskid>
+    std::multimap<bigint, uint, std::less<bigint>> ranklist;   ///< <rank, taskid>
     drank = rankd(g);
     urank = ranku(g);
 
@@ -149,8 +149,8 @@ StageProcessors* ListScheduler::HEFTUD(BooleanDag *g, uint pnum)
     }
 
     while (ranklist.size()) {
-        std::multimap<int, uint, std::less<int>>::iterator iter;
-        int est = INT_MAX;
+        std::multimap<bigint, uint, std::less<bigint>>::iterator iter;
+        bigint est = INT_MAX;
         uint taskid;
         uint prednum;
         uint pid = 0u;
@@ -160,8 +160,8 @@ StageProcessors* ListScheduler::HEFTUD(BooleanDag *g, uint pnum)
         Vertice *v = g->getvertice(taskid);
         prednum = v->prednum;
         uint *predpeid = new uint[prednum];
-        int *predfinishtime = new int[prednum];
-        int *predcommcost = new int[prednum];
+        bigint *predfinishtime = new bigint[prednum];
+        bigint *predcommcost = new bigint[prednum];
 
         // calculate each predecessors aft(eft) with consideration of communication
         for (uint i = 0u; i < prednum; ++i) {
@@ -173,9 +173,9 @@ StageProcessors* ListScheduler::HEFTUD(BooleanDag *g, uint pnum)
             predcommcost[i] = e->weight;
         }
         for (uint i = 0; i < pnum; ++i) {
-            int avail = P->getPE(i)->eft;
+            bigint avail = P->getPE(i)->eft;
             for (uint j = 0u; j < prednum; ++j) {
-                int predt = predfinishtime[j] + (predpeid[j] == i ? 0 : predcommcost[j]);
+                bigint predt = predfinishtime[j] + (predpeid[j] == i ? 0 : predcommcost[j]);
                 avail = avail > predt ? avail : predt;
             }
             if (avail < est) {

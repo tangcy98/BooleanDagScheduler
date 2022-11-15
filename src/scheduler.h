@@ -15,7 +15,8 @@
 
 
 typedef struct Schedule {
-    int makespan;
+    bigint latency;
+    double energy;
     int chunksize;
     StageProcessors *p;
 } Schedule;

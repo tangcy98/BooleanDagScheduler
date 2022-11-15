@@ -19,8 +19,8 @@ class StageProcessors;
 typedef struct Assignment {
     uint pid;   ///< pe id
     uint tid;   ///< task(vertice) id
-    int starttime;      ///< starttime
-    int finishtime;     ///< starttime
+    bigint starttime;      ///< starttime
+    bigint finishtime;     ///< starttime
     Assignment() : pid(0), tid(0), starttime(0), finishtime(0) {};
 } Assignment;
 
@@ -33,7 +33,7 @@ int updatePEState();    ///< update PE state
 typedef struct _PE {
     uint id;            ///< unique id
     std::vector<Assignment*>    tasks;  ///< Assigned tasks
-    int eft;            ///< earlist finish time
+    bigint eft;            ///< earlist finish time
     std::map<uint, uint> cache;     ///< <taskid, index> record cached id of nodes
     uint line[BLOCKROW];            ///< index -> taskid
     uint smallestfreeidx;
@@ -47,7 +47,13 @@ class StageProcessors {
     uint pnum;      ///< number of processors
     std::map<uint, Assignment> schedule;    ///< <taskid, Assignment>
     _PE *PE;
-    int makespan;
+    bigint makespan;
+    bigint *loadlatency;
+    bigint *midlatency;
+    bigint *storelatency;
+    double *loadenergy;
+    double *midenergy;
+    double *storeenergy;
     std::vector<InstructionNameSpace::Instruction> inst;
 
 public:
@@ -63,17 +69,21 @@ public:
 
     /* TaskAssignment */
     int checkPlaceable(BooleanDag *G, uint peid, uint taskid);
-    int assignTask(BooleanDag* g, uint taskid, uint PEid, int starttime, int finishtime);
-    int releaseMem(BooleanDag* g, uint taskid, int *priority);
+    int assignTask(BooleanDag* g, uint taskid, uint PEid, bigint starttime, bigint finishtime);
+    int releaseMem(BooleanDag* g, uint taskid, bigint *priority);
     int releaseMem(BooleanDag* g, uint taskid, bool *assigned);
     int assignFinish();
     int storeCache();
+    int calcLatency();
+    int calcEnergy();
 
     /* Setters */
     int removeStoreInst(uint taskid);
 
     /* Visitors */
-    int getmakespan();
+    bigint getmakespan();
+    bigint getLatency();
+    double getEnergy();
     uint getpnum();
     _PE* getPE(uint id);
     StageProcessors* getNext();
