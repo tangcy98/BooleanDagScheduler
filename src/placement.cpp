@@ -10,7 +10,7 @@
 #include "placement.h"
 
 
-uint ESTPlacement(BooleanDag *G, StageProcessors *P, uint taskid)
+uint ESTPlacement(BooleanDag *G, StageProcessors *P, uint taskid, std::map<std::pair<uint, uint>, bigint>* newWeight)
 {
     uint pid;   ///< return value
     bigint est = INT_MAX;
@@ -75,7 +75,7 @@ uint ESTPlacement(BooleanDag *G, StageProcessors *P, uint taskid)
         }
     }
     if (placeable) {
-        P->assignTask(G, taskid, pid, est, est+v->weight);
+        P->assignTask(G, taskid, pid, est, est+v->weight, newWeight);
     }
     else {
         return UINT_MAX;

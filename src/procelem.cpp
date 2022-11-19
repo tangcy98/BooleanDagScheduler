@@ -156,7 +156,7 @@ int StageProcessors::checkPlaceable(BooleanDag *G, uint peid, uint taskid)
 }
 
 // TODO: Check conflict with existing assignment
-int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint starttime, bigint finishtime)
+int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint starttime, bigint finishtime, std::map<std::pair<uint, uint>, bigint>* newWeight)
 {
     Assignment a;
     a.pid = PEid;

@@ -11,6 +11,7 @@
 
 #include "booleandag.h"
 #include "procelem.h"
+#include <map>
 
 int getCommLevel(uint totalpnum, uint p1, uint p2);
 

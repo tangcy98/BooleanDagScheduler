@@ -15,7 +15,7 @@
 #ifndef BANKNUM
 #define BANKNUM     4
 #endif
-#define MESHSIZE    16*BANKNUM     ///< number of mesh
+#define MESHSIZE    (16*BANKNUM)     ///< number of mesh
 #define BLOCKROW    256    ///< number of rows in a block - NWL
 #define BLOCKCOL    256    ///< number of lines in a block - NBL
 
@@ -53,7 +53,7 @@
 #define OPWEIGHT    (COMPUTELATENCY+SUBARRAYWRITELATENCY)
 
 #define COMMWEIGHT      (BANKREADLATENCY+BANKWRITELATENCY)
-#define MESHADDR(K,ROW) K*BLOCKROW+ROW
+#define MESHADDR(K,ROW) (K*BLOCKROW+ROW)
 
 typedef unsigned int uint;
 typedef long long bigint;

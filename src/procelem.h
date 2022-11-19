@@ -70,7 +70,7 @@ public:
 
     /* TaskAssignment */
     int checkPlaceable(BooleanDag *G, uint peid, uint taskid);
-    int assignTask(BooleanDag* g, uint taskid, uint PEid, bigint starttime, bigint finishtime);
+    int assignTask(BooleanDag* g, uint taskid, uint PEid, bigint starttime, bigint finishtime, std::map<std::pair<uint, uint>, bigint>* newWeight=NULL);
     int releaseMem(BooleanDag* g, uint taskid, bigint *priority);
     int releaseMem(BooleanDag* g, uint taskid, bool *assigned);
     int assignFinish();

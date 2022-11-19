@@ -9,6 +9,8 @@
 #ifndef _PRIORITY_
 #define _PRIORITY_
 #include "booleandag.h"
+#include <map>
+
 namespace Priority {
     /* Basic Functions */
     bigint* ranku(BooleanDag *g, bigint *value=NULL);     ///< calculate the upward rank of each vertice in a DAG (static usually)
@@ -19,7 +21,7 @@ namespace Priority {
     /* Recursive Functions */
     bigint ranku(BooleanDag *g, uint id, bigint *value);      ///< calculate the upward rank of a vertice in a DAG in a recursive way
     bigint bleavel(BooleanDag *g, uint id, bigint *value);    ///< calculate the bottom level of a vertice in a DAG in a recursive way
-    bigint rankd(BooleanDag *g, uint id, bigint *value);      ///< calculate the downward rank of a vertice in a DAG in a recursive way
-    bigint tleavel(BooleanDag *g, uint id, bigint *value);    ///< calculate the top level of a vertice in a DAG in a recursive way
+    bigint rankd(BooleanDag *g, uint id, bigint *value, std::map<std::pair<uint, uint>, bigint> *newWeight=NULL);      ///< calculate the downward rank of a vertice in a DAG in a recursive way
+    bigint tleavel(BooleanDag *g, uint id, bigint *value, std::map<std::pair<uint, uint>, bigint> *newWeight=NULL);    ///< calculate the top level of a vertice in a DAG in a recursive way
 }
 #endif

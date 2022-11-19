@@ -60,9 +60,9 @@ bigint *Priority::rankd(BooleanDag *g, bigint *value)
     return value;
 }
 
-bigint Priority::rankd(BooleanDag *g, uint id, bigint *value)
+bigint Priority::rankd(BooleanDag *g, uint id, bigint *value, std::map<std::pair<uint, uint>, bigint> *newWeight)
 {
-    if (value[id] >= 0) {
+    if (value[id] >= 0 && !newWeight) {
         return value[id];
     }
     Vertice *v = g->getvertice(id);
@@ -72,9 +72,16 @@ bigint Priority::rankd(BooleanDag *g, uint id, bigint *value)
     bigint max = 0;
     bigint currank;
     Edge *e;
+    std::map<std::pair<uint, uint>, bigint>::iterator it;
     for (uint i = 0; i < v->prednum; ++i) {
         e = *(v->predecessors+i);
-        currank = e->src->weight + e->weight + rankd(g, e->src->id, value);
+        it = newWeight->find(std::make_pair(e->src->id, e->dest->id));
+        if (it != newWeight->end()) {
+            currank = e->src->weight + it->second + rankd(g, e->src->id, value, newWeight);
+        }
+        else {
+            currank = e->src->weight + e->weight + rankd(g, e->src->id, value, newWeight);
+        }
         max = max > currank ? max : currank;
     }
     return (value[id] = max);
