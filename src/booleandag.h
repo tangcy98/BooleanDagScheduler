@@ -2,8 +2,8 @@
  * @file    booleandag.h
  * @brief   Basic implementation of boolean dag
  * @author  Chenu Tang
- * @version 2.0
- * @date    2022-11-09
+ * @version 2.3
+ * @date    2022-11-18
  * @note    
  */
 #ifndef _BOOLEANDAG_
@@ -43,6 +43,7 @@ typedef struct Vertice {
     int invflags;
     Vertice() : id(-1u), name(""), type{NORMAL}, weight(-1), \
         predecessors(NULL), successors(NULL), prednum(0u), succnum(0u), invflags(0) {};
+    ~Vertice() {if(predecessors) delete[] predecessors; if (successors) delete[] successors;};
 } Vertice;
 
 typedef struct Edge {
@@ -66,7 +67,7 @@ public:
     /* Constructor & Destructor */
     BooleanDag();
     BooleanDag(uint n);
-    // ~BooleanDag();
+    ~BooleanDag();
 
     /* Construction related */
     int init();

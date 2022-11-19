@@ -2,8 +2,8 @@
  * @file    scheduler.h
  * @brief   Schedule the whole DAG and map it to HW
  * @author  Chenu Tang
- * @version 2.0
- * @date    2022-11-09
+ * @version 2.3
+ * @date    2022-11-18
  * @note    
  */
 #include "booleandag.h"
@@ -16,6 +16,7 @@
 
 typedef struct Schedule {
     bigint latency;
+    bigint oplatency;
     double energy;
     int chunksize;
     StageProcessors *p;

@@ -2,8 +2,8 @@
  * @file    scheduler.cpp
  * @brief   Schedule the whole DAG and map it to HW
  * @author  Chenu Tang
- * @version 2.0
- * @date    2022-11-09
+ * @version 2.3
+ * @date    2022-11-18
  * @note    
  */
 
@@ -69,13 +69,16 @@ Schedule scheduleDAG(BooleanDag *G, uint workload)
     }
 
     sche.latency = 0;
+    sche.oplatency = 0;
     sche.energy = 0;
     p = &stages;
     while ((*p)) {
         (*p)->calcLatency();
         (*p)->calcEnergy();
         sche.latency += (*p)->getLatency();
+        sche.oplatency += (*p)->getOPLatency();
         sche.energy += (*p)->getEnergy();
+
         // printf("%lld %lf\n", sche.latency, sche.energy);
         p = &((*p)->next);
 

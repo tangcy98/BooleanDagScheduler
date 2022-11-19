@@ -2,8 +2,8 @@
  * @file    procelem.h
  * @brief   Processing Element Definition
  * @author  Chenu Tang
- * @version 2.0
- * @date    2022-11-09
+ * @version 2.3
+ * @date    2022-11-18
  * @note    
  */
 #ifndef _PROCELEM_
@@ -49,6 +49,7 @@ class StageProcessors {
     _PE *PE;
     bigint makespan;
     bigint *loadlatency;
+    bigint *oplatency;
     bigint *midlatency;
     bigint *storelatency;
     double *loadenergy;
@@ -83,6 +84,7 @@ public:
     /* Visitors */
     bigint getmakespan();
     bigint getLatency();
+    bigint getOPLatency();
     double getEnergy();
     uint getpnum();
     _PE* getPE(uint id);
@@ -93,6 +95,7 @@ public:
     uint getLine(uint taskid);
     uint getOverwritepos(uint peid);
     Assignment* getAssignmentByTask(uint taskid);
+    void getTime2SpatialUtil(std::map<bigint, uint> &res, bigint offset = 0);
 
     /* Printers */
     void printScheduleByTasks();

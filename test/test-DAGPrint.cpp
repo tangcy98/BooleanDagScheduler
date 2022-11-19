@@ -12,7 +12,7 @@ int main()
     uint src[] = {0, 0, 0, 0, 0, 1, 1, 2, 3, 5, 6, 7};
     uint dest[] = {1, 2, 3, 4, 6, 5, 6, 7, 7, 8, 8, 8};
     int eweight[] = {4, 1, 1, 1, 10, 1, 1, 1, 1, 5, 6, 5};
-    int *value = NULL;
+    bigint *value = NULL;
     G.init(9);
 
     for (int i = 0; i < 9; ++i) {
@@ -28,7 +28,7 @@ int main()
 
     printf("RankU:\n");
     for (int i = 0; i < 9; ++i) {
-        printf("%d ", value[i]);
+        printf("%lld ", value[i]);
     }
     printf("\n");
     delete[] value;

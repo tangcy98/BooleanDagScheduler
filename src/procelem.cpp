@@ -2,8 +2,8 @@
  * @file    procelem.cpp
  * @brief   Processing Element Implementation
  * @author  Chenu Tang
- * @version 2.0
- * @date    2022-11-09
+ * @version 2.3
+ * @date    2022-11-18
  * @note    
  */
 
@@ -19,10 +19,10 @@ StageProcessors::StageProcessors()
     PE = NULL;
     makespan = 0;
     loadlatency = NULL;
+    oplatency = NULL;
     midlatency = NULL;
     storelatency = NULL;
     loadlatency = NULL;
-    midlatency = NULL;
     storelatency = NULL;
     next = NULL;
     prior = NULL;
@@ -42,6 +42,7 @@ int StageProcessors::init(uint pn)
     }
     makespan = 0;
     loadlatency = new bigint[pn];
+    oplatency = new bigint[pn];
     midlatency = new bigint[pn];
     storelatency = new bigint[pn];
     loadenergy = new double[pn];
@@ -59,6 +60,9 @@ int StageProcessors::clean()
     }
     if (loadlatency) {
         delete[] loadlatency;
+    }
+    if (oplatency) {
+        delete[] oplatency;
     }
     if (midlatency) {
         delete[] midlatency;
@@ -80,10 +84,10 @@ int StageProcessors::clean()
     PE = NULL;
     makespan = 0;
     loadlatency = NULL;
+    oplatency = NULL;
     midlatency = NULL;
     storelatency = NULL;
     loadlatency = NULL;
-    midlatency = NULL;
     storelatency = NULL;
     next = NULL;
     prior = NULL;
@@ -395,6 +399,7 @@ int StageProcessors::assignFinish()
 int StageProcessors::calcLatency()
 {
     memset((void*)(loadlatency), 0, pnum*sizeof(bigint));
+    memset((void*)(oplatency), 0, pnum*sizeof(bigint));
     memset((void*)(midlatency), 0, pnum*sizeof(bigint));
     memset((void*)(storelatency), 0, pnum*sizeof(bigint));
     uint threads = MESHSIZE / pnum;
@@ -411,10 +416,10 @@ int StageProcessors::calcLatency()
             p1 = it->src[0] / BLOCKROW;
             p2 = it->dest / BLOCKROW;
             level = getCommLevel(pnum, p1, p2);
-            double max = midlatency[p1] > midlatency[p2] ? midlatency[p1] : midlatency[p2];
-            uint maxthreads = maxcopythread[level] > threads ? threads : maxcopythread[level];
+            bigint max = midlatency[p1] > midlatency[p2] ? midlatency[p1] : midlatency[p2];
+            uint maxthreads = MaxCopyThread[level] > threads ? threads : MaxCopyThread[level];
             if (level > 0) {
-                max += commweight[level] * (threads / maxthreads);
+                max += CommWeight[level] * (threads / maxthreads);
             }
             else {
                 max += OPLATENCY;
@@ -425,6 +430,7 @@ int StageProcessors::calcLatency()
         else {
             uint p = it->src[0] / BLOCKROW;
             midlatency[p] += OPLATENCY;
+            oplatency[p] += OPLATENCY;
         }
     }
     return 1;
@@ -450,8 +456,8 @@ int StageProcessors::calcEnergy()
             p2 = it->dest / BLOCKROW;
             level = getCommLevel(pnum, p1, p2);
             if (level > 0) {
-                midenergy[p1] += readenergy[level] * threads;
-                midenergy[p2] += writeenergy[level] * threads;
+                midenergy[p1] += Readenergy[level] * threads;
+                midenergy[p2] += WriteEnergy[level] * threads;
             }
             else {
                 midenergy[p1] += OPENERGY * threads;
@@ -459,7 +465,7 @@ int StageProcessors::calcEnergy()
         }
         else {
             uint p = it->src[0] / BLOCKROW;
-            midlatency[p] += OPENERGY * threads;
+            midenergy[p] += OPENERGY * threads;
         }
     }
     return 1;
@@ -500,7 +506,20 @@ bigint StageProcessors::getLatency()
         ml = ml > midlatency[i] ? ml : midlatency[i];
         sl += storelatency[i];
     }
+    // printf("%lld %lld %lld\n", ll, ml, sl);
     return ll + ml + sl;
+}
+
+bigint StageProcessors::getOPLatency()
+{
+    bigint op;
+
+    op = 0;
+    for (uint i = 0u; i < pnum; ++i) {
+        op += oplatency[i];
+    }
+    op /= pnum;
+    return op;
 }
 
 double StageProcessors::getEnergy()
@@ -580,6 +599,102 @@ Assignment* StageProcessors::getAssignmentByTask(uint taskid)
     }
     return NULL;
 }
+
+void StageProcessors::getTime2SpatialUtil(std::map<bigint, uint> &res, bigint offset)
+{
+    memset((void*)(midlatency), 0, pnum*sizeof(bigint));
+    bigint midstart = 0;
+    uint threads = MESHSIZE / pnum;
+
+    bool *assigned = new bool[pnum * BLOCKROW];
+    for (uint i = 0; i < pnum * BLOCKROW; ++i) {
+        assigned[i] = false;
+    }
+
+    std::vector<InstructionNameSpace::Instruction>::iterator it;
+
+    bigint curtime;
+    std::map<bigint, uint>::iterator resit;
+    it = inst.begin();
+    while (it->op == InstructionNameSpace::LOAD) {
+        assigned[it->dest] = true;
+        midstart += LOADLATENCY * threads;
+        curtime = midstart;
+        resit = res.find(curtime+offset);
+        if (resit != res.end()) {
+            do {
+                (resit->second) += threads;
+                ++resit;
+            } while(resit != res.end());
+        }
+        else {
+            res.insert(std::make_pair(curtime+offset, threads));
+            resit = res.find(curtime+offset);
+            (--resit);
+            uint last = resit->first <= offset ? 0u : resit->second;
+            (++resit)->second += last;
+            ++resit;
+            while (resit != res.end()) {
+                (resit->second) += threads;
+                ++resit;
+            }
+        }
+        ++it;
+    }
+
+    while (it->op != InstructionNameSpace::STORE) {
+        uint inc = assigned[it->dest] ? 0u : 1u;
+        assigned[it->dest] = true;
+        if (it->op == InstructionNameSpace::COPY) {
+            uint p1, p2, level;
+            p1 = it->src[0] / BLOCKROW;
+            p2 = it->dest / BLOCKROW;
+            level = getCommLevel(pnum, p1, p2);
+            curtime = midlatency[p1] > midlatency[p2] ? midlatency[p1] : midlatency[p2];
+            uint maxthreads = MaxCopyThread[level] > threads ? threads : MaxCopyThread[level];
+            if (level > 0) {
+                curtime += CommWeight[level] * (threads / maxthreads);
+            }
+            else {
+                curtime += OPLATENCY;
+            }
+            midlatency[p1] = curtime;
+            midlatency[p2] = curtime;
+        }
+        else {
+            uint p = it->src[0] / BLOCKROW;
+            midlatency[p] += OPLATENCY;
+            oplatency[p] += OPLATENCY;
+            curtime = midlatency[p];
+        }
+        if (inc == 1u) {
+            curtime += midstart;
+            resit = res.find(curtime+offset);
+            if (resit != res.end()) {
+                do {
+                    (resit->second) += threads;
+                    ++resit;
+                } while(resit != res.end());
+            }
+            else {
+                res.insert(std::make_pair(curtime+offset, threads));
+                resit = res.find(curtime+offset);
+                (--resit);
+                uint last = resit->first <= offset ? 0u : resit->second;
+                (++resit)->second += last;
+                ++resit;
+                while (resit != res.end()) {
+                    (resit->second) += threads;
+                    ++resit;
+                }
+            }
+        }
+        ++it;
+    }
+
+    delete[] assigned;
+}
+
 
 void StageProcessors::printScheduleByTasks()
 {

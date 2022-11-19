@@ -2,8 +2,8 @@
  * @file    placement.cpp
  * @brief   Task placement strategy
  * @author  Chenu Tang
- * @version 2.0
- * @date    2022-11-09
+ * @version 2.3
+ * @date    2022-11-18
  * @note    
  */
 
@@ -66,7 +66,7 @@ uint ESTPlacement(BooleanDag *G, StageProcessors *P, uint taskid)
         }
         bigint avail = pe->eft;
         for (uint j = 0u; j < prednum; ++j) {
-            bigint predt = predfinishtime[j] + (commweight[getCommLevel(pnum, i, predpeid[j])]);
+            bigint predt = predfinishtime[j] + (CommWeight[getCommLevel(pnum, i, predpeid[j])]);
             avail = avail > predt ? avail : predt;
         }
         if (avail < est) {

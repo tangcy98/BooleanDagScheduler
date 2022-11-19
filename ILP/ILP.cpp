@@ -2,8 +2,8 @@
  * @file    ILP.cpp
  * @brief   Wrappers for coin-or Cbc
  * @author  Chenu Tang
- * @version 2.1
- * @date    2022-11-10
+ * @version 2.3
+ * @date    2022-11-18
  * @note    
  */
 
@@ -35,7 +35,7 @@ CutSolver::CutSolver(const double workload, const uint cols, const double *w)
     collb = new double[cols];
     colub = new double[cols];
 
-    for (uint i = 0; i < cols; ++i) {
+    for (int i = 0; i < cols; ++i) {
         obj[i] = w[i];
         start[i] = i;
         index[i] = 0;

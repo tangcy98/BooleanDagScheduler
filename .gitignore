@@ -54,4 +54,10 @@ dkms.conf
 # others
 .vscode
 *.txt
+*.csv
 main
+tmp
+simres
+platforms
+*pre_syn_out*
+test.*

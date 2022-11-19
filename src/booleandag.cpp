@@ -2,8 +2,8 @@
  * @file    booleandag.cpp
  * @brief   Basic implementation of boolean dag
  * @author  Chenu Tang
- * @version 2.0
- * @date    2022-11-09
+ * @version 2.3
+ * @date    2022-11-18
  * @note    
  */
 
@@ -52,6 +52,12 @@ BooleanDag::BooleanDag(uint n)
         V = new Vertice[n];
         prio = new bigint[n];
     }
+}
+
+BooleanDag::~BooleanDag()
+{
+    if (V) delete[] V;
+    if (prio) delete[] prio;
 }
 
 

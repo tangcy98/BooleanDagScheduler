@@ -8,10 +8,12 @@ using namespace Priority;
 
 int main()
 {
-    BooleanDag *G = v2booleandag("../benchmark/test.v");
+    BooleanDag *G = v2booleandag("../benchmark/new_sin.v");
     Schedule s = scheduleDAG(G, 32u);
 
-    printInst(&s, 0u, 32u);
+    G->traversePrint();
+
+    // printInst(&s, 0u, 32u);
 
     // printf("The makespan = %d\n", PU->getmakespan());
 

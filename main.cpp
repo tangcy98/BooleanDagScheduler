@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
         // printf("latency: %lld, energy: %lf\n", sche[i].latency, sche[i].energy);
     }
 
-    printf("%lld %lf %lld %lf\n", latency / 1000ll, energy / 1000.0, simdlatency / 1000ll, simdenergy / 1000.0);
+    printf("%lld,%lf,%lld,%lf\n", latency / 1000ll, energy / 1000.0, simdlatency / 1000ll, simdenergy / 1000.0);
     // printf("final latency: %lld ns, energy: %lf nJ\n", latency / 1000ll, energy / 1000.0);
     // printf("simd  latency: %lld ns, energy: %lf nJ\n", simdlatency / 1000ll, simdenergy / 1000.0);
 
