@@ -152,6 +152,7 @@ Schedule scheduleDAGDynamic(BooleanDag *G, uint workload)
     uint tasksnum = size;
 
     while (tasksnum) {
+        printf("New stage\n");
         ++stagecnt;
         uint taskid;
         uint pid = 0;
@@ -161,6 +162,8 @@ Schedule scheduleDAGDynamic(BooleanDag *G, uint workload)
 
         uint taskcnt = 0;
         while (tasksnum && pid != UINT_MAX) {
+            if (tasksnum % 500 == 1)
+                printf("tasksnum: %d\n", tasksnum);
             taskid = findMinPrioTask(size, priority, assigned);
             pid = ESTPlacement(G, *p, taskid, &newWeight);
             if (pid != UINT_MAX) {

@@ -50,10 +50,11 @@ bigint *Priority::rankd(BooleanDag *g, bigint *value)
     int size = g->getsize();
     if (!value) {
         value = new bigint[size];
+        for (uint i = 0u; i < size; ++i) {
+            *(value+i) = -1;
+        }
     }
-    for (uint i = 0u; i < size; ++i) {
-        *(value+i) = -1;
-    }
+
     for (uint i = 0u; i < size; ++i) {
         rankd(g, i, value);
     }
@@ -75,8 +76,9 @@ bigint Priority::rankd(BooleanDag *g, uint id, bigint *value, std::map<std::pair
     std::map<std::pair<uint, uint>, bigint>::iterator it;
     for (uint i = 0; i < v->prednum; ++i) {
         e = *(v->predecessors+i);
-        it = newWeight->find(std::make_pair(e->src->id, e->dest->id));
-        if (it != newWeight->end()) {
+        if (newWeight)
+            it = newWeight->find(std::make_pair(e->src->id, e->dest->id));
+        if (newWeight && it != newWeight->end()) {
             currank = e->src->weight + it->second + rankd(g, e->src->id, value, newWeight);
         }
         else {
@@ -85,6 +87,15 @@ bigint Priority::rankd(BooleanDag *g, uint id, bigint *value, std::map<std::pair
         max = max > currank ? max : currank;
     }
     return (value[id] = max);
+}
+
+void clearChildren(const BooleanDag *g, bigint *value, const Vertice *v)
+{
+    uint succnum = v->succnum;
+    value[v->id] = -1;
+    for (uint i = 0; i < succnum; ++i) {
+        clearChildren(g, value, v->successors[i]->dest);
+    }
 }
 
 // int main()

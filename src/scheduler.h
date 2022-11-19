@@ -23,5 +23,6 @@ typedef struct Schedule {
 } Schedule;
 
 Schedule scheduleDAG(BooleanDag *G, uint workload);
+Schedule scheduleDAGDynamic(BooleanDag *G, uint workload);
 
 void printInst(Schedule *s, uint offset, uint chunksize);
