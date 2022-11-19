@@ -15,7 +15,7 @@
 
 int getCommLevel(uint totalpnum, uint p1, uint p2);
 
-uint ESTPlacement(BooleanDag *G, StageProcessors *P, uint taskid);
+uint ESTPlacement(BooleanDag *G, StageProcessors *P, uint taskid, std::map<std::pair<uint, uint>, bigint>* newWeight=NULL);
 
 
 #endif

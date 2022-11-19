@@ -95,7 +95,7 @@ Schedule scheduleDAG(BooleanDag *G, uint workload)
 
 inline uint findMaxPrioTask(uint size, bigint* priority, bool* assigned)
 {
-    bigint max = priority[0];
+    bigint max;
     uint i = 0;
     uint res = 0;
     while (assigned[i]) i++;
@@ -109,10 +109,20 @@ inline uint findMaxPrioTask(uint size, bigint* priority, bool* assigned)
     return res;
 }
 
-inline int addNewWeight(BooleanDag *G, uint taskid, std::map<std::pair<uint, uint>, bigint>* newWeight=NULL)
+inline uint findMinPrioTask(uint size, bigint* priority, bool* assigned)
 {
-    Vertice *v = G->getvertice(taskid);
-
+    bigint min;
+    uint i = 0;
+    uint res = 0;
+    while (assigned[i]) i++;
+    res = i;
+    min = priority[i];
+    for (++i; i < size; ++i) {
+        if (!assigned[i] && priority[i] < min) {
+            res = i;
+        }
+    }
+    return res;
 }
 
 Schedule scheduleDAGDynamic(BooleanDag *G, uint workload)
@@ -128,9 +138,6 @@ Schedule scheduleDAGDynamic(BooleanDag *G, uint workload)
     }
     uint size = G->getsize();
     priority = Priority::rankd(G);
-    for (uint i = 0u; i < size; ++i) {
-        priority[i] = -priority[i];
-    }
     G->setPriority(priority);
     bool *assigned = new bool[size];
 
@@ -154,13 +161,14 @@ Schedule scheduleDAGDynamic(BooleanDag *G, uint workload)
 
         uint taskcnt = 0;
         while (tasksnum && pid != UINT_MAX) {
-            taskid = findMaxPrioTask(size, priority, assigned);
+            taskid = findMinPrioTask(size, priority, assigned);
             pid = ESTPlacement(G, *p, taskid, &newWeight);
             if (pid != UINT_MAX) {
                 ++taskcnt;
                 assigned[taskid] = true;
                 --tasksnum;
                 (*p)->releaseMem(G, taskid, assigned);
+                Priority::rankd(G, taskid, priority, &newWeight);
             }
         }
         (*p)->assignFinish();

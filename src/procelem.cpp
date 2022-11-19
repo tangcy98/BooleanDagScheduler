@@ -11,8 +11,6 @@
 #include "procelem.h"
 #include <string.h>
 
-
-
 StageProcessors::StageProcessors()
 {
     pnum = 0;
@@ -193,6 +191,7 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
         Vertice *predv = prede->src;
         uint predid = predv->id;
         Assignment* predassignment;
+        bigint commtime;
         if (pe->cache.find(predid) == pe->cache.end()) {
             // Did not find local data
             // need copy / load and assign new row
@@ -210,6 +209,7 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
                 copyinst.dest = MESHADDR(PEid, pe->smallestfreeidx);
                 copyinst.src[0] = MESHADDR(srcpeid, srcidx);
 
+                commtime = CommWeight[getCommLevel(pnum, PEid, srcpeid)];
                 inst.push_back(copyinst);
                 while (++(pe->smallestfreeidx) < BLOCKROW && pe->line[pe->smallestfreeidx] < UINT_MAX);  // next smallestfreeidx
 
@@ -251,6 +251,7 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
                     copyinst.op = InstructionNameSpace::COPY;
                     copyinst.dest = MESHADDR(PEid, pe->smallestfreeidx);
                     copyinst.src[0] = MESHADDR(srcpeid, srcidx);
+                    commtime = OPLATENCY;
                     inst.push_back(copyinst);
                     while (++(pe->smallestfreeidx) < BLOCKROW && pe->line[pe->smallestfreeidx] < UINT_MAX);  // next smallestfreeidx
                     // }
@@ -258,7 +259,7 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
                     // remove STORE
                     bool rmv = true;
                     for (uint k = 0; k < predv->succnum; ++k) {
-                        if (predv->successors[k]->dest->id != taskid && G->getPriority(predv->successors[k]->dest->id) <= G->getPriority(taskid)) {
+                        if (predv->successors[k]->dest->id != taskid && notAssigned(G, predv->successors[k]->dest->id)) {
                             rmv = false;
                         }
                     }
@@ -275,7 +276,7 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
                     loadinst.op = InstructionNameSpace::LOAD;
                     loadinst.dest = MESHADDR(PEid,pe->overwriteflag);
                     loadinst.src[0] = MESHADDR(pnum, predid);   //TODO: ADD MEM ADDR
-
+                    commtime = COMMWEIGHT*(MESHSIZE/pnum);
                     inst.insert(inst.begin(), loadinst);
                     if (pe->smallestfreeidx == pe->overwriteflag) {
                         ++(pe->smallestfreeidx);
@@ -294,8 +295,11 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
             pe->overwriteflag = pe->overwriteflag > pe->smallestfreeidx ? pe->overwriteflag : pe->smallestfreeidx;
         }
         else {
+            commtime = 0;
             opinst.src[i] = MESHADDR(PEid, pe->cache[predid]);
         }
+        if (newWeight)
+            newWeight->insert(std::make_pair(std::make_pair(predid, taskid), commtime));
     }
 
     opinst.dest = MESHADDR(PEid, pe->smallestfreeidx);
@@ -306,6 +310,22 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
     pe->overwriteflag = pe->overwriteflag > pe->smallestfreeidx ? pe->overwriteflag : pe->smallestfreeidx;
 
     return 1;
+}
+
+bool StageProcessors::notAssigned(BooleanDag* g, uint taskid)
+{
+    StageProcessors *p;
+    if (getAssignmentByTask(taskid)) {
+        return false;
+    }
+
+    p = prior;
+    while (p) {
+        if (p->getAssignmentByTask(taskid))
+            return false;
+        p = p->prior;
+    }
+    return true;
 }
 
 // int checkAllFinish;
