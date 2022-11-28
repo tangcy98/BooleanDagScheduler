@@ -1,14 +1,19 @@
-workload=(1 2 4 16 100 128 256 512 1000 1024 2048 4096 8192 10000 16384 20000 25600 32768 51200 65536 80000 102400 262144 500000 1000000)
+workload=(1 2 4 8 16 32 64 100 128 256 365 512 800 1000 1024 1200 1500 1800 2048 2560 3000 3600 4096 5000 6000 8192 10000 12000 14000 16384 20000 24000 28765 32768 36789 42000 51200 65536 80000 102400 131072 160000 200000 262144 360000 460000 524288 720000 1000000 1048576)
 benchmark=(adder cavlc dec div int2float log2 max multiplier priority router sin sqrt)
 baknums=(1 2 4 8 16)
+type=(SRAM RRAM)
 
-echo "memory,benchmark,workload,latency(ns),energy(nJ),simdlatency(ns),simdenergy(nJ),oplatency(ns),simdoplatency(ns),temporalutil,simdtemporalutil,maxspatialutil,avgspatialutil,simdmaxspatialutil,simdavgspatialutil"
-for t in ${baknums[@]}
-do
-    for j in ${benchmark[@]}
+
+echo "memorytype,memorysize,benchmark,workload,latency(ns),energy(nJ),simdlatency(ns),simdenergy(nJ),oplatency(ns),simdoplatency(ns),opearations(Ops),throughput(GOPS),simdthroughput(GOPS),efficiency(TTOPS/W),simdefficiency(TTOPS/W),temporalutil,simdtemporalutil,maxspatialutil,avgspatialutil,simdmaxspatialutil,simdavgspatialutil"
+for m in ${type[@]}
     do
-        g++ simulate.cpp ../src/*.cpp ../ILP/ILP.cpp -DBANKNUM=$t -lOsiClp -lCbc -lClp -o simulate
-        ./simulate ../benchmark/$j.v ${#workload[@]} ${workload[@]}
+    for t in ${baknums[@]}
+    do
+        for j in ${benchmark[@]}
+        do
+            g++ simulate.cpp ../src/*.cpp ../ILP/ILP.cpp -DBANKNUM=$t -D$m -lOsiClp -lCbc -lClp -o simulate
+            ./simulate ../benchmark/$j.v ${#workload[@]} ${workload[@]}
+        done
     done
 done
 rm -f simulate

@@ -60,6 +60,8 @@ class BooleanDag {
 private:
     Vertice *V;             ///< vertice list
     std::vector<Edge> E;    ///< edge list
+    uint inputsize;
+    uint outputsize;
     uint size;              ///< length of the vertice list / number of the vertices
     bigint *prio;              ///< priority list
 
@@ -71,7 +73,7 @@ public:
 
     /* Construction related */
     int init();
-    int init(uint n);
+    int init(uint n,uint i=0u,uint o=0u);
     int destroy();  ///< WIP
     int addVertice(bigint weight, const std::string &s="");
     int addVertice(uint id, bigint weight, const std::string &s="");
@@ -85,6 +87,8 @@ public:
 
     /* Vistors */
     uint getsize();
+    uint getoutputsize();
+    uint getinputsize();
     Vertice* getvertice(uint id);
     bigint getPriority(uint id);
 

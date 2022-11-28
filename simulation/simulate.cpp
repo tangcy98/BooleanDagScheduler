@@ -71,6 +71,7 @@ int main(int argc, char *argv[])
     uint testnum = atoi(argv[2]);
 
     BooleanDag *G = v2booleandag(inputfile);
+    bigint opcnt = G->getsize() - G->getinputsize() - 1;
     char *benchmark = getBenchmarkName(inputfile);
     uint searchbound = LOG2(MESHSIZE);
     // printf("Bsize:%d, searchbound:%d\n", Bsize, searchbound);
@@ -102,6 +103,13 @@ int main(int argc, char *argv[])
         bigint simdlatency = 0;
         bigint simdoplatency = 0;
         double simdenergy = 0.0;
+        bigint operations = (bigint)(size)*opcnt;
+        double throughput;
+        double simdthroughput;
+        double efficiency;
+        double simdefficiency;
+
+
         std::map<bigint, uint> spatialutil, simdspatialutil;
         double temporalutil = 0.0;
         double simdtemporalutil = 0.0;
@@ -145,6 +153,10 @@ int main(int argc, char *argv[])
             simdenergy += sche[searchbound].energy;
             // printf("latency: %lld, energy: %lf\n", sche[i].latency, sche[i].energy);
         }
+        throughput = (double)(operations*1000ll)/(double)(latency);
+        simdthroughput = (double)(operations*1000ll)/(double)(simdlatency);
+        efficiency = (double)(operations)/(energy*1000.0);
+        simdefficiency = (double)(operations)/(simdenergy*1000.0);
         temporalutil = (double)(oplatency)/(double)(latency);
         simdtemporalutil = (double)(simdoplatency)/(double)(simdlatency);
         maxspatialutil = maxutil(spatialutil);
@@ -152,11 +164,19 @@ int main(int argc, char *argv[])
         simdmaxspatialutil = maxutil(simdspatialutil);
         simdavgspatialutil = avgutil(simdspatialutil);
 
-        printf("%d*4*4*256*256,%s,%s,%lld,%lf,%lld,%lf,%lld,%lld,%lf,%lf,%lf,%lf,%lf,%lf\n", 
-            BANKNUM, benchmark, argv[3+i], 
-            latency / 1000ll, energy / 1000.0, 
-            simdlatency / 1000ll, simdenergy / 1000.0, 
-            oplatency / 1000ll, simdoplatency / 1000ll, 
+#ifdef RRAM
+        printf("RRAM,");
+#else
+        printf("SRAM,");
+#endif
+        printf("%d*4*4*%d*%d,%s,%s,%lf,%lf,%lf,%lf,%lf,%lf,%lld,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", 
+            BANKNUM, BLOCKROW, BLOCKCOL, 
+            benchmark, argv[3+i], 
+            (double)(latency) / 1000.0, energy / 1000.0, 
+            (double)(simdlatency) / 1000.0, simdenergy / 1000.0, 
+            (double)(oplatency) / 1000.0, (double)(simdoplatency) / 1000ll, 
+            operations, throughput, simdthroughput, 
+            efficiency, simdefficiency, 
             temporalutil, simdtemporalutil, 
             maxspatialutil, avgspatialutil, 
             simdmaxspatialutil, simdavgspatialutil);

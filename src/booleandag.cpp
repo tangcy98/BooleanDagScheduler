@@ -38,6 +38,8 @@ BooleanDag::BooleanDag()
 {
     V = NULL;
     size = 0u;
+    inputsize = 0u;
+    outputsize = 0u;
     prio = NULL;
 }
 
@@ -74,12 +76,14 @@ int BooleanDag::init()
     return 1;
 }
 
-int BooleanDag::init(uint n)
+int BooleanDag::init(uint n, uint input, uint output)
 {
     if (size > 0) {
         destroy();
     }
     size = n;
+    inputsize = input;
+    outputsize = output;
     if (!n) {
         V = NULL;
         prio = NULL;
@@ -201,6 +205,16 @@ int BooleanDag::setPriority(bigint *arr)
 uint BooleanDag::getsize()
 {
     return size;
+}
+
+uint BooleanDag::getoutputsize()
+{
+    return outputsize;
+}
+
+uint BooleanDag::getinputsize()
+{
+    return inputsize;
 }
 
 Vertice* BooleanDag::getvertice(uint id)
