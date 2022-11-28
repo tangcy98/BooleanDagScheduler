@@ -91,7 +91,7 @@ BooleanDag *v2booleandag(const std::string &filename)
             continue;
         } else if (line.find("wire") != std::string::npos) {
             n_num = count(line.begin(), line.end(), 'n');
-            G->init(n_num + x_num + 1);
+            G->init(n_num + x_num + 1, x_num, y_num);
 
             /* Add 1'b0 and xi to DAG */
             G->addVertice(0, SRCWEIGHT, "1'b0");

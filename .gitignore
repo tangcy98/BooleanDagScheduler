@@ -61,3 +61,5 @@ simres
 platforms
 *pre_syn_out*
 test.*
+*.pdf
+figures

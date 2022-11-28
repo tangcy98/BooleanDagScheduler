@@ -9,6 +9,7 @@
 #ifndef _IMPORTDAG_
 #define _IMPORTDAG_
 #include <string>
+#include <map>
 #include "memory.h"
 #include "booleandag.h"
 
