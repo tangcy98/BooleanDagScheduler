@@ -97,7 +97,9 @@ void printInst(Schedule *s, uint offset, uint chunksize)
 {
     StageProcessors **p = &(s->p);
     int stage = 0;
-    printf("Offset: %d, Chunksize: %d\n", offset, chunksize);
+    printf("# memoffset %d\n", offset);
+    printf("# meshcols %d\n", chunksize);
+    printf("# meshrows %d\n", (*p)->getpnum());
     while ((*p)) {
         (*p)->printInstructions(stage++);
         p = &(*p)->next;

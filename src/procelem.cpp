@@ -728,19 +728,25 @@ void StageProcessors::printScheduleByPE()
 void StageProcessors::printInstructions(int stage)
 {
     std::vector<InstructionNameSpace::Instruction>::iterator it;
-    printf("Stage %d:\n", stage);
+    // printf("Stage %d:\n", stage);
     for (it = inst.begin(); it < inst.end(); ++it) {
         int pe[4] = {it->src[0]/BLOCKROW, it->src[1]/BLOCKROW,it->src[2]/BLOCKROW,it->dest/BLOCKROW};
-        printf("\t%-8s\t%s%d[%d] %s%d[%d] %s%d[%d] %d[%d]", \
+        // printf("\t%-8s\t%s%d[%d] %s%d[%d] %s%d[%d] %d[%d]", \
+        //     InstructionNameSpace::instname[(int)(it->op)], \
+        //     it->invflag[0]?"~":"", it->src[0], pe[0], \
+        //     it->invflag[1]?"~":"", it->src[1], pe[1], \
+        //     it->invflag[2]?"~":"", it->src[2], pe[2], \
+        //     it->dest, pe[3]);
+        printf("\t%-8s\t%s%d %s%d %s%d %d", \
             InstructionNameSpace::instname[(int)(it->op)], \
-            it->invflag[0]?"~":"", it->src[0], pe[0], \
-            it->invflag[1]?"~":"", it->src[1], pe[1], \
-            it->invflag[2]?"~":"", it->src[2], pe[2], \
-            it->dest, pe[3]);
+            it->invflag[0]?"~":"", it->src[0], \
+            it->invflag[1]?"~":"", it->src[1], \
+            it->invflag[2]?"~":"", it->src[2], \
+            it->dest);
         if (it->op >= InstructionNameSpace::INV) {
             printf("\t// Task.%d finished", it->taskid);
         }
         printf("\n");
     }
-    printf("Stage finish.\n\n");
+    // printf("Stage finish.\n\n");
 }

@@ -53,13 +53,6 @@ int main(int argc, char* argv[])
 
     int curmax = 0;
 
-    // readline ="n11ejsogn11";
-    // string::size_type pos(0);
-    // while ((pos=readline.find("n11"))!=string::npos) {
-    //     readline.replace(pos,3,"p4567");
-    // }
-    // cout << readline << endl;
-    // return 0;
     string wireline;
     vector<string> assignlines;
     vector<string> yassignlines;
