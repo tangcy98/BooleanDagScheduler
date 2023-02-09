@@ -2,8 +2,8 @@
  * @file    scheduler.cpp
  * @brief   Schedule the whole DAG and map it to HW
  * @author  Chenu Tang
- * @version 2.3
- * @date    2022-11-18
+ * @version 3.0
+ * @date    2023-02-09
  * @note    
  */
 
@@ -52,8 +52,8 @@ Schedule scheduleDAG(BooleanDag *G, uint workload)
             iter = ranklist.begin();
             taskid = iter->second;
             pid = ESTPlacement(G, *p, taskid);
-            ranklist.erase(iter);
             if (pid != UINT_MAX) {
+                ranklist.erase(iter);
                 ++taskcnt;
                 assigned[taskid] = true;
                 (*p)->releaseMem(G, taskid, assigned);

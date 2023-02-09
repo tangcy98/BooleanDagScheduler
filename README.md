@@ -1,11 +1,13 @@
 # BooleanDagScheduler
-This is a DAG scheduler for Boolean Function Graph (e.g. MIG, AIG)
+This is a DAG scheduler for Boolean Function Graph (e.g. MIG, AIG).
+
+The input should be a verilog file described in specific forms.
 
 ## Get Started
 
 1. Dependency
-
-`sudo apt-get install  coinor-cbc coinor-libcbc-dev`
+The ILP part needs coinor libs.
+`sudo apt-get install  coinor-cbc=2.8.12-1build2 coinor-libcbc-dev=2.8.12-1build2`
 `g++ main.cpp src/*.cpp ILP/ILP.cpp -lOsiClp -lCbc -lClp -o main`
 ## Basic Information
 ```

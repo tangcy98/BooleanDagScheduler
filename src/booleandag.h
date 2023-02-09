@@ -2,8 +2,8 @@
  * @file    booleandag.h
  * @brief   Basic implementation of boolean dag
  * @author  Chenu Tang
- * @version 2.3
- * @date    2022-11-18
+ * @version 3.0
+ * @date    2023-02-09
  * @note    
  */
 #ifndef _BOOLEANDAG_
@@ -86,9 +86,9 @@ public:
     int setPriority(bigint *arr);
 
     /* Vistors */
-    uint getsize();
-    uint getoutputsize();
-    uint getinputsize();
+    uint const& getsize() const;
+    uint const& getoutputsize() const;
+    uint const& getinputsize() const;
     Vertice* getvertice(uint id);
     bigint getPriority(uint id);
 
