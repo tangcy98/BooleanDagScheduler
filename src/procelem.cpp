@@ -2,8 +2,8 @@
  * @file    procelem.cpp
  * @brief   Processing Element Implementation
  * @author  Chenu Tang
- * @version 2.3
- * @date    2022-11-18
+ * @version 3.0
+ * @date    2022-02-09
  * @note    
  */
 
@@ -165,6 +165,7 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
     a.finishtime = finishtime;
     schedule.insert(std::make_pair(taskid, a));
     makespan = makespan > finishtime ? makespan : finishtime;
+    int rmvbound = G->getinputsize()+G->getoutputsize();
 
     _PE *pe = PE+PEid;
     pe->eft = pe->eft > finishtime ? pe->eft : finishtime;
@@ -226,47 +227,48 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
                 // inst.insert(++it, copyinst);
             }
             else {
-                if (prior) {
-                    predassignment = prior->getAssignmentByTask(predid);
-                }
-                if (predassignment && prior->getLine(predid)>=getOverwritepos(predassignment->pid)) {
-                    uint srcpeid = predassignment->pid;
-                    uint srcidx = (prior->PE+srcpeid)->cache[predid];   // no need to use getLine
-                    // if (srcpeid == pe->id) {
-                    //     // in this pe, no need to copy
-                    //     opinst.src[i] = MESHADDR(PEid, srcidx);
-                    //     pe->cache.insert(std::make_pair(predassignment->tid, srcidx));
-                    //     pe->line[srcidx] = predassignment->tid;
-                    //     if (pe->smallestfreeidx == srcidx) {
-                    //         while (++(pe->smallestfreeidx) < BLOCKROW && pe->line[pe->smallestfreeidx] < UINT_MAX);  // next smallestfreeidx
-                    //     }
-                    // }
-                    // else {
-                        // need copy
-                    InstructionNameSpace::Instruction copyinst;
-                    opinst.src[i] = MESHADDR(PEid, pe->smallestfreeidx);
-                    pe->cache.insert(std::make_pair(v->predecessors[i]->src->id, pe->smallestfreeidx));
-                    pe->line[pe->smallestfreeidx] = v->predecessors[i]->src->id;
-                    copyinst.taskid = taskid;
-                    copyinst.op = InstructionNameSpace::COPY;
-                    copyinst.dest = MESHADDR(PEid, pe->smallestfreeidx);
-                    copyinst.src[0] = MESHADDR(srcpeid, srcidx);
-                    inst.push_back(copyinst);
-                    while (++(pe->smallestfreeidx) < BLOCKROW && pe->line[pe->smallestfreeidx] < UINT_MAX);  // next smallestfreeidx
-                    // }
+                // if (prior) {
+                //     predassignment = prior->getAssignmentByTask(predid);
+                // }
+                // if (predassignment && prior->getLine(predid)>=getOverwritepos(predassignment->pid)) {
+                //     uint srcpeid = predassignment->pid;
+                //     uint srcidx = (prior->PE+srcpeid)->cache[predid];   // no need to use getLine
+                //     // if (srcpeid == pe->id) {
+                //     //     // in this pe, no need to copy
+                //     //     opinst.src[i] = MESHADDR(PEid, srcidx);
+                //     //     pe->cache.insert(std::make_pair(predassignment->tid, srcidx));
+                //     //     pe->line[srcidx] = predassignment->tid;
+                //     //     if (pe->smallestfreeidx == srcidx) {
+                //     //         while (++(pe->smallestfreeidx) < BLOCKROW && pe->line[pe->smallestfreeidx] < UINT_MAX);  // next smallestfreeidx
+                //     //     }
+                //     // }
+                //     // else {
+                //         // need copy
+                //     InstructionNameSpace::Instruction copyinst;
+                //     opinst.src[i] = MESHADDR(PEid, pe->smallestfreeidx);
+                    
+                //     pe->cache.insert(std::make_pair(v->predecessors[i]->src->id, pe->smallestfreeidx));
+                //     pe->line[pe->smallestfreeidx] = v->predecessors[i]->src->id;
+                //     copyinst.taskid = taskid;
+                //     copyinst.op = InstructionNameSpace::COPY;
+                //     copyinst.dest = MESHADDR(PEid, pe->smallestfreeidx);
+                //     copyinst.src[0] = MESHADDR(srcpeid, srcidx);
+                //     inst.push_back(copyinst);
+                //     while (++(pe->smallestfreeidx) < BLOCKROW && pe->line[pe->smallestfreeidx] < UINT_MAX);  // next smallestfreeidx
+                //     // }
 
-                    // remove STORE
-                    bool rmv = true;
-                    for (uint k = 0; k < predv->succnum; ++k) {
-                        if (predv->successors[k]->dest->id != taskid && G->getPriority(predv->successors[k]->dest->id) <= G->getPriority(taskid)) {
-                            rmv = false;
-                        }
-                    }
-                    if (rmv) {
-                        prior->removeStoreInst(predv->id);
-                    }
-                }
-                else {
+                //     // remove STORE
+                //     bool rmv = true;
+                //     for (uint k = 0; k < predv->succnum; ++k) {
+                //         if (predv->successors[k]->dest->id != taskid && G->getPriority(predv->successors[k]->dest->id) <= G->getPriority(taskid)) {
+                //             rmv = false;
+                //         }
+                //     }
+                //     if (rmv && predv->id > rmvbound) {
+                //         prior->removeStoreInst(predv->id);
+                //     }
+                // }
+                // else {
                     InstructionNameSpace::Instruction loadinst;
                     opinst.src[i] = MESHADDR(PEid, pe->overwriteflag);
                     pe->cache.insert(std::make_pair(v->predecessors[i]->src->id, pe->overwriteflag));
@@ -284,7 +286,7 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
                     else {
                         ++(pe->overwriteflag);
                     }
-                }
+                // }
                 // in memory
 
                 // std::vector<InstructionNameSpace::Instruction>::iterator it = inst.begin();
@@ -315,8 +317,12 @@ int StageProcessors::releaseMem(BooleanDag* g, uint taskid, bigint *priority)
     Vertice *v = g->getvertice(taskid);
     uint prednum = v->prednum;
     bigint prio = priority[taskid];
+    uint releasebound = g->getinputsize()+g->getoutputsize();
     for (uint i = 0u; i < prednum; ++i) {
         Vertice *pred = v->predecessors[i]->src;
+        if (pred->id <= releasebound) {
+            continue;
+        }
         uint succnum = pred->succnum;
         bool releaseable = true;
         for (uint j = 0u; j < succnum; ++j) {
@@ -346,8 +352,12 @@ int StageProcessors::releaseMem(BooleanDag* g, uint taskid, bool *assigned)
 {
     Vertice *v = g->getvertice(taskid);
     uint prednum = v->prednum;
+    uint releasebound = g->getinputsize()+g->getoutputsize();
     for (uint i = 0u; i < prednum; ++i) {
         Vertice *pred = v->predecessors[i]->src;
+        if (pred->id <= releasebound) {
+            continue;
+        }
         uint succnum = pred->succnum;
         bool releaseable = true;
         for (uint j = 0u; j < succnum; ++j) {
@@ -728,19 +738,25 @@ void StageProcessors::printScheduleByPE()
 void StageProcessors::printInstructions(int stage)
 {
     std::vector<InstructionNameSpace::Instruction>::iterator it;
-    printf("Stage %d:\n", stage);
+    // printf("Stage %d:\n", stage);
     for (it = inst.begin(); it < inst.end(); ++it) {
         int pe[4] = {it->src[0]/BLOCKROW, it->src[1]/BLOCKROW,it->src[2]/BLOCKROW,it->dest/BLOCKROW};
-        printf("\t%-8s\t%s%d[%d] %s%d[%d] %s%d[%d] %d[%d]", \
+        // printf("\t%-8s\t%s%d[%d] %s%d[%d] %s%d[%d] %d[%d]", \
+        //     InstructionNameSpace::instname[(int)(it->op)], \
+        //     it->invflag[0]?"~":"", it->src[0], pe[0], \
+        //     it->invflag[1]?"~":"", it->src[1], pe[1], \
+        //     it->invflag[2]?"~":"", it->src[2], pe[2], \
+        //     it->dest, pe[3]);
+        printf("\t%-8s\t%s%d %s%d %s%d %d", \
             InstructionNameSpace::instname[(int)(it->op)], \
-            it->invflag[0]?"~":"", it->src[0], pe[0], \
-            it->invflag[1]?"~":"", it->src[1], pe[1], \
-            it->invflag[2]?"~":"", it->src[2], pe[2], \
-            it->dest, pe[3]);
+            it->invflag[0]?"~":"", it->src[0], \
+            it->invflag[1]?"~":"", it->src[1], \
+            it->invflag[2]?"~":"", it->src[2], \
+            it->dest);
         if (it->op >= InstructionNameSpace::INV) {
             printf("\t// Task.%d finished", it->taskid);
         }
         printf("\n");
     }
-    printf("Stage finish.\n\n");
+    // printf("Stage finish.\n\n");
 }

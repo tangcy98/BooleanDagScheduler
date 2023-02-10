@@ -2,8 +2,8 @@
  * @file    scheduler.cpp
  * @brief   Schedule the whole DAG and map it to HW
  * @author  Chenu Tang
- * @version 2.3
- * @date    2022-11-18
+ * @version 3.0
+ * @date    2023-02-09
  * @note    
  */
 
@@ -52,8 +52,8 @@ Schedule scheduleDAG(BooleanDag *G, uint workload)
             iter = ranklist.begin();
             taskid = iter->second;
             pid = ESTPlacement(G, *p, taskid);
-            ranklist.erase(iter);
             if (pid != UINT_MAX) {
+                ranklist.erase(iter);
                 ++taskcnt;
                 assigned[taskid] = true;
                 (*p)->releaseMem(G, taskid, assigned);
@@ -97,7 +97,9 @@ void printInst(Schedule *s, uint offset, uint chunksize)
 {
     StageProcessors **p = &(s->p);
     int stage = 0;
-    printf("Offset: %d, Chunksize: %d\n", offset, chunksize);
+    printf("# memoffset %d\n", offset);
+    printf("# meshcols %d\n", chunksize);
+    printf("# meshrows %d\n", (*p)->getpnum());
     while ((*p)) {
         (*p)->printInstructions(stage++);
         p = &(*p)->next;

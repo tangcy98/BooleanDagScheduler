@@ -2,8 +2,8 @@
  * @file    booleandag.cpp
  * @brief   Basic implementation of boolean dag
  * @author  Chenu Tang
- * @version 2.3
- * @date    2022-11-18
+ * @version 3.0
+ * @date    2023-02-09
  * @note    
  */
 
@@ -202,17 +202,17 @@ int BooleanDag::setPriority(bigint *arr)
 
 
 /* Vistors */
-uint BooleanDag::getsize()
+uint const& BooleanDag::getsize() const
 {
     return size;
 }
 
-uint BooleanDag::getoutputsize()
+uint const& BooleanDag::getoutputsize() const
 {
     return outputsize;
 }
 
-uint BooleanDag::getinputsize()
+uint const& BooleanDag::getinputsize() const
 {
     return inputsize;
 }

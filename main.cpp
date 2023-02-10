@@ -53,38 +53,41 @@ int main(int argc, char *argv[])
     bigint simdlatency = 0;
     double simdenergy = 0.0;
 
+    printf("# data %u\n", size);
+    printf("# input %u\n", G->getinputsize());
+    printf("# output %u\n", G->getoutputsize());
     for (uint i = 0u; i <= searchbound; ++i) {
         chunksize = 1 << i;
         for (uint j = 0; j < uint(val[i]+0.000001); ++j) {
-            // printInst(sche+i, offset, chunksize);
-            // offset += chunksize;
-            latency += sche[i].latency;
-            energy += sche[i].energy;
+            printInst(sche+i, offset, chunksize);
+            offset += chunksize;
+            // latency += sche[i].latency;
+            // energy += sche[i].energy;
             // printf("latency: %lld, energy: %lf\n", sche[i].latency, sche[i].energy);
         }
     }
 
 
     // if SIMD
-    uint ms = MESHSIZE * BLOCKCOL;
-    size = ((size + ms - 1) / ms) * ms;
-    Bsize = (size + BLOCKCOL - 1) / BLOCKCOL;
-    if (searchbound < LOG2(MESHSIZE)) {
-        searchbound = LOG2(MESHSIZE);
-        sche[searchbound] = scheduleDAG(G, MESHSIZE);
-        cost[searchbound] = sche[searchbound].latency;
-    }
+    // uint ms = MESHSIZE * BLOCKCOL;
+    // size = ((size + ms - 1) / ms) * ms;
+    // Bsize = (size + BLOCKCOL - 1) / BLOCKCOL;
+    // if (searchbound < LOG2(MESHSIZE)) {
+    //     searchbound = LOG2(MESHSIZE);
+    //     sche[searchbound] = scheduleDAG(G, MESHSIZE);
+    //     cost[searchbound] = sche[searchbound].latency;
+    // }
     
-    for (uint j = 0; j < Bsize/MESHSIZE; ++j) {
-        // printInst(sche+i, offset, chunksize);
-        // offset += chunksize;
+    // for (uint j = 0; j < Bsize/MESHSIZE; ++j) {
+    //     // printInst(sche+i, offset, chunksize);
+    //     // offset += chunksize;
 
-        simdlatency += sche[searchbound].latency;
-        simdenergy += sche[searchbound].energy;
-        // printf("latency: %lld, energy: %lf\n", sche[i].latency, sche[i].energy);
-    }
+    //     // simdlatency += sche[searchbound].latency;
+    //     // simdenergy += sche[searchbound].energy;
+    //     // printf("latency: %lld, energy: %lf\n", sche[i].latency, sche[i].energy);
+    // }
 
-    printf("%lld,%lf,%lld,%lf\n", latency / 1000ll, energy / 1000.0, simdlatency / 1000ll, simdenergy / 1000.0);
+    // printf("%lld,%lf,%lld,%lf\n", latency / 1000ll, energy / 1000.0, simdlatency / 1000ll, simdenergy / 1000.0);
     // printf("final latency: %lld ns, energy: %lf nJ\n", latency / 1000ll, energy / 1000.0);
     // printf("simd  latency: %lld ns, energy: %lf nJ\n", simdlatency / 1000ll, simdenergy / 1000.0);
 
