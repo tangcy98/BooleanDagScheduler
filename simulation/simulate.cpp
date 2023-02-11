@@ -155,8 +155,8 @@ int main(int argc, char *argv[])
         }
         throughput = (double)(operations*1000ll)/(double)(latency);
         simdthroughput = (double)(operations*1000ll)/(double)(simdlatency);
-        efficiency = (double)(operations)/(energy*1000.0);
-        simdefficiency = (double)(operations)/(simdenergy*1000.0);
+        efficiency = (double)(operations)*(double)(latency)/(energy*1000.0);
+        simdefficiency = (double)(operations)*(double)(simdlatency)/(simdenergy*1000.0);
         temporalutil = (double)(oplatency)/(double)(latency);
         simdtemporalutil = (double)(simdoplatency)/(double)(simdlatency);
         maxspatialutil = maxutil(spatialutil);
