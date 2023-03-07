@@ -3,7 +3,7 @@ benchmark=(adder cavlc dec div int2float log2 max multiplier priority router sin
 baknums=(1 2 4 8 16)
 type=(SRAM RRAM)
 
-rm $1
+rm -f $1
 touch $1
 echo "memorytype,memorysize,benchmark,workload,latency(ns),energy(nJ),simdlatency(ns),simdenergy(nJ),oplatency(ns),simdoplatency(ns),opearations(Ops),throughput(GOPS),simdthroughput(GOPS),efficiency(TOPS/W),simdefficiency(TOPS/W),temporalutil,simdtemporalutil,maxspatialutil,avgspatialutil,simdmaxspatialutil,simdavgspatialutil" >> $1
 for m in ${type[@]}
