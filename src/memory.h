@@ -10,10 +10,14 @@
 #ifndef __MEMORY__
 #define __MEMORY__
 #include <climits>
+// #include "config.h"
 
 #ifndef BANKNUM
 #define BANKNUM     4
 #endif
+
+#define BIGINT_MAX  0x7fffffffffffffffll
+#define BIGINT_MIN  0x8000000000000000ll
 typedef unsigned int uint;
 typedef long long bigint;
 

@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     double *cost = new double[searchbound+1];
 
     for (uint i = 0u; i <= searchbound; ++i) {
-        sche[i] = scheduleDAG(G, NPOWEROF2(i));
+        sche[i] = rankuDynamicWeightsSchedule(G, NPOWEROF2(i));
         cost[i] = sche[i].latency;
     }
 
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
         Bsize = (size + BLOCKCOL - 1) / BLOCKCOL;
         if (searchbound < LOG2(MESHSIZE)) {
             searchbound = LOG2(MESHSIZE);
-            sche[searchbound] = scheduleDAG(G, MESHSIZE);
+            sche[searchbound] = rankuHEFTSchedule(G, MESHSIZE);
             cost[searchbound] = sche[searchbound].latency;
         }
         

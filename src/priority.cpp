@@ -10,6 +10,7 @@
 #include "priority.h"
 #include "booleandag.h"
 #include <cstdio>
+
 bigint *Priority::ranku(BooleanDag *g, bigint *value)
 {
     int size = g->getsize();
@@ -17,32 +18,34 @@ bigint *Priority::ranku(BooleanDag *g, bigint *value)
         value = new bigint[size];
     }
     for (uint i = 0u; i < size; ++i) {
-        *(value+i) = -1;
+        *(value+i) = 1;
     }
     for (uint i = 0u; i < size; ++i) {
-        ranku(g, i, value);
+        if (value[i] > 0) {
+            ranku(g, i, value);
+        }
     }
     return value;
 }
 
 bigint Priority::ranku(BooleanDag *g, uint id, bigint *value)
 {
-    if (value[id] >= 0) {
+    if (value[id] <= 0) {
         return value[id];
     }
     Vertice *v = g->getvertice(id);
     if (v->succnum == 0) {
-        return (value[id] = v->weight);
+        return (value[id] = -v->weight);
     }
     bigint max = v->weight;
     bigint currank;
     Edge *e;
     for (uint i = 0; i < v->succnum; ++i) {
         e = *(v->successors+i);
-        currank = v->weight + e->weight + ranku(g, e->dest->id, value);
+        currank = v->weight + e->weight - ranku(g, e->dest->id, value);
         max = max > currank ? max : currank;
     }
-    return (value[id] = max);
+    return (value[id] = -max);
 }
 
 bigint *Priority::rankd(BooleanDag *g, bigint *value)
@@ -79,11 +82,3 @@ bigint Priority::rankd(BooleanDag *g, uint id, bigint *value)
     }
     return (value[id] = max);
 }
-
-// int main()
-// {
-//     BooleanDag g;
-//     Priority::ranku(&g);
-//     printf("%s\n", __FILE__);
-//     return 0;
-// }

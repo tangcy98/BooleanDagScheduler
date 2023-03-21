@@ -53,6 +53,8 @@ dkms.conf
 
 # others
 .vscode
+bin
+obj
 *.txt
 *.csv
 main
@@ -62,4 +64,5 @@ platforms
 *pre_syn_out*
 test.*
 *.pdf
+*.asm
 figures

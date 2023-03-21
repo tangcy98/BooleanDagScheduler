@@ -4,6 +4,7 @@
 #include "./src/importdag.h"
 #include "./ILP/ILP.h"
 #include <cstdio>
+#include <ctime>
 
 using namespace std;
 
@@ -19,6 +20,8 @@ int main(int argc, char *argv[])
     if (argc < 3) {
         return 0;
     }
+    clock_t begintime;
+    begintime = clock();
     const char *inputfile = argv[1];
     uint size = atoi(argv[2]);
     uint Bsize = (size + BLOCKCOL - 1) / BLOCKCOL;
@@ -34,7 +37,7 @@ int main(int argc, char *argv[])
     double *cost = new double[LOG2(MESHSIZE)+1];
 
     for (uint i = 0u; i <= searchbound; ++i) {
-        sche[i] = scheduleDAG(G, NPOWEROF2(i));
+        sche[i] = rankuHEFTSchedule(G, NPOWEROF2(i));
         cost[i] = sche[i].latency;
     }
 
@@ -53,13 +56,14 @@ int main(int argc, char *argv[])
     bigint simdlatency = 0;
     double simdenergy = 0.0;
 
-    printf("# data %u\n", size);
-    printf("# input %u\n", G->getinputsize());
-    printf("# output %u\n", G->getoutputsize());
+    printf("# compileCPUTime %ldms\n", (clock()-begintime) / (CLOCKS_PER_SEC/1000));
+    // printf("# data %u\n", size);
+    // printf("# input %u\n", G->getinputsize());
+    // printf("# output %u\n", G->getoutputsize());
     for (uint i = 0u; i <= searchbound; ++i) {
         chunksize = 1 << i;
-        for (uint j = 0; j < uint(val[i]+0.000001); ++j) {
-            printInst(sche+i, offset, chunksize);
+        for (uint j = 0; j < uint(val[i]+0.00001); ++j) {
+            // printInst(sche+i, offset, chunksize);
             offset += chunksize;
             // latency += sche[i].latency;
             // energy += sche[i].energy;
@@ -74,7 +78,7 @@ int main(int argc, char *argv[])
     // Bsize = (size + BLOCKCOL - 1) / BLOCKCOL;
     // if (searchbound < LOG2(MESHSIZE)) {
     //     searchbound = LOG2(MESHSIZE);
-    //     sche[searchbound] = scheduleDAG(G, MESHSIZE);
+    //     sche[searchbound] = rankuHEFTSchedule(G, MESHSIZE);
     //     cost[searchbound] = sche[searchbound].latency;
     // }
     

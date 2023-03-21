@@ -22,6 +22,8 @@ typedef struct Schedule {
     StageProcessors *p;
 } Schedule;
 
-Schedule scheduleDAG(BooleanDag *G, uint workload);
+Schedule rankuHEFTSchedule(BooleanDag *G, uint workload);
+
+Schedule rankuDynamicWeightsSchedule(BooleanDag *G, uint workload);
 
 void printInst(Schedule *s, uint offset, uint chunksize);

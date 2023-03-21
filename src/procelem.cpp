@@ -17,7 +17,6 @@ StageProcessors::StageProcessors()
 {
     pnum = 0;
     PE = NULL;
-    makespan = 0;
     loadlatency = NULL;
     oplatency = NULL;
     midlatency = NULL;
@@ -28,6 +27,34 @@ StageProcessors::StageProcessors()
     prior = NULL;
 }
 
+StageProcessors::~StageProcessors()
+{
+    if (PE) {
+        delete[] PE;
+    }
+    if (loadlatency) {
+        delete[] loadlatency;
+    }
+    if (oplatency) {
+        delete[] oplatency;
+    }
+    if (midlatency) {
+        delete[] midlatency;
+    }
+    if (storelatency) {
+        delete[] storelatency;
+    }
+    if (loadenergy) {
+        delete[] loadenergy;
+    }
+    if (midenergy) {
+        delete[] midenergy;
+    }
+    if (storeenergy) {
+        delete[] storeenergy;
+    }
+    inst.clear();
+}
 
 int StageProcessors::init(uint pn)
 {
@@ -36,11 +63,10 @@ int StageProcessors::init(uint pn)
     }
     pnum = pn;
     schedule.clear();
-    PE = new _PE[pnum];
+    PE = new ProcessElem[pnum];
     for (uint i = 0; i < pn; ++i) {
         PE[i].id = i;
     }
-    makespan = 0;
     loadlatency = new bigint[pn];
     oplatency = new bigint[pn];
     midlatency = new bigint[pn];
@@ -48,6 +74,10 @@ int StageProcessors::init(uint pn)
     loadenergy = new double[pn];
     midenergy = new double[pn];
     storeenergy = new double[pn];
+    memset((void*)(loadlatency), 0, pnum*sizeof(bigint));
+    memset((void*)(oplatency), 0, pnum*sizeof(bigint));
+    memset((void*)(midlatency), 0, pnum*sizeof(bigint));
+    memset((void*)(storelatency), 0, pnum*sizeof(bigint));
     next = NULL;
     prior = NULL;
     return 1;
@@ -82,7 +112,6 @@ int StageProcessors::clean()
     pnum = 0;
     schedule.clear();
     PE = NULL;
-    makespan = 0;
     loadlatency = NULL;
     oplatency = NULL;
     midlatency = NULL;
@@ -133,7 +162,7 @@ int StageProcessors::checkPlaceable(BooleanDag *G, uint peid, uint taskid)
 {
     Vertice *v = G->getvertice(taskid);
     uint prednum = v->prednum;
-    _PE* pe = PE + peid;
+    ProcessElem* pe = PE + peid;
 
     int load = 0;
     int copy = 0;
@@ -164,11 +193,10 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
     a.starttime = starttime;
     a.finishtime = finishtime;
     schedule.insert(std::make_pair(taskid, a));
-    makespan = makespan > finishtime ? makespan : finishtime;
     int rmvbound = G->getinputsize()+G->getoutputsize();
 
-    _PE *pe = PE+PEid;
-    pe->eft = pe->eft > finishtime ? pe->eft : finishtime;
+    ProcessElem *pe = PE+PEid;
+    pe->opeft = pe->opeft > finishtime ? pe->opeft : finishtime;
     // TODO: Possible insertion in the future
     // for (std::vector<Assignment*>::iterator iter = pe->tasks.begin(); iter != pe->tasks.end(); ++iter) {
     //     if (starttime < (*iter)->starttime) {
@@ -177,7 +205,7 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
     //     }
     // }
     pe->tasks.push_back(&schedule[taskid]);
-
+ 
 
     Vertice *v = G->getvertice(taskid);
     uint prednum = v->prednum;
@@ -202,7 +230,7 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
                 // in mesh
                 InstructionNameSpace::Instruction copyinst;
                 uint srcpeid = predassignment->pid;
-                uint srcidx = (PE+srcpeid)->cache[predassignment->tid];
+                uint srcidx = (PE+srcpeid)->cache[predid];
                 opinst.src[i] = MESHADDR(PEid, pe->smallestfreeidx);
                 pe->cache.insert(std::make_pair(v->predecessors[i]->src->id, pe->smallestfreeidx));
                 pe->line[pe->smallestfreeidx] = v->predecessors[i]->src->id;
@@ -214,7 +242,7 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
                 inst.push_back(copyinst);
                 while (++(pe->smallestfreeidx) < BLOCKROW && pe->line[pe->smallestfreeidx] < UINT_MAX);  // next smallestfreeidx
 
-                // std::vector<InstructionNameSpace::Instruction>::iterator it = inst.begin();
+                // std::deque<InstructionNameSpace::Instruction>::iterator it = inst.begin();
                 // while (it != inst.end()) {
                 //     if (it->taskid == predv->id && it->op >= InstructionNameSpace::INV) {
                 //         break;  // find pred op position
@@ -278,7 +306,7 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
                     loadinst.dest = MESHADDR(PEid,pe->overwriteflag);
                     loadinst.src[0] = MESHADDR(pnum, predid);   //TODO: ADD MEM ADDR
 
-                    inst.insert(inst.begin(), loadinst);
+                    inst.push_front(loadinst);
                     if (pe->smallestfreeidx == pe->overwriteflag) {
                         ++(pe->smallestfreeidx);
                         pe->overwriteflag = pe->smallestfreeidx;
@@ -289,7 +317,7 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
                 // }
                 // in memory
 
-                // std::vector<InstructionNameSpace::Instruction>::iterator it = inst.begin();
+                // std::deque<InstructionNameSpace::Instruction>::iterator it = inst.begin();
                 // while (it != inst.end() && it->op != InstructionNameSpace::LOAD) ++it;
                 // inst.insert(it, loadinst);
             }
@@ -307,6 +335,195 @@ int StageProcessors::assignTask(BooleanDag* G, uint taskid, uint PEid, bigint st
     while (++(pe->smallestfreeidx) < BLOCKROW && pe->line[pe->smallestfreeidx] < UINT_MAX);  // next smallestfreeidx
     pe->overwriteflag = pe->overwriteflag > pe->smallestfreeidx ? pe->overwriteflag : pe->smallestfreeidx;
 
+    return 1;
+}
+
+
+typedef struct SyncNode {
+    bigint synctime;
+    InstructionNameSpace::Instruction inst;
+    SyncNode *next;
+    SyncNode() : synctime(0ll), next(NULL){};
+    SyncNode(bigint t) : synctime(t), next(NULL){};
+} SyncNode;
+
+int cleanSyncNode(SyncNode *node)
+{
+    SyncNode *next = node;
+    while (node) {
+        next = node->next;
+        delete node;
+        node = next;
+    }
+    return 1;
+}
+
+int insertSyncNode(SyncNode *head, SyncNode *node)
+{
+    SyncNode *p = head;
+    while (p->next && p->next->synctime <= node->synctime) {
+        p = p->next;
+    }
+    if (p->next) {
+        SyncNode *tmp = p->next;
+        p->next = node;
+        node->next = tmp;
+    }
+    else {
+        p->next = node;
+    }
+    return 1;
+}
+
+int StageProcessors::dynamicWeightsAssignTask(BooleanDag* G, uint taskid, uint PEid)
+{
+    Assignment a;
+    a.pid = PEid;
+    a.tid = taskid;
+    a.starttime = midlatency[PEid];
+    // printf("[%d]\n", taskid);
+    int rmvbound = G->getinputsize()+G->getoutputsize();
+    ProcessElem *pe = PE+PEid;
+    Vertice *v = G->getvertice(taskid);
+    uint prednum = v->prednum;
+    bigint curmaxpelat = midlatency[PEid];
+    SyncNode *sync = new SyncNode;
+    uint threads = MESHSIZE / pnum;
+    InstructionNameSpace::Instruction opinst;
+    opinst.taskid = taskid;
+    opinst.op = Vtype2Instop(v->type);
+    for (int i = 0; i < 3; ++i) {
+        if (v->invflags&(1<<i)) {
+            opinst.invflag[i] = true;
+        }
+    }
+    for (uint i = 0u; i < prednum; ++i) {
+        Edge *prede = v->predecessors[i];
+        Vertice *predv = prede->src;
+        uint predid = predv->id;
+        Assignment* predassignment;
+        bool newselfblk = false;
+        ProcessElem *srcpe;
+        uint srcpeid;
+        bigint minblkt = BIGINT_MAX;
+
+        if (pe->cache.find(predid) == pe->cache.end()) {
+            // Did not find local data
+            // need copy / load and assign new row
+            for (uint k = 0; k < pnum; ++k) {
+                srcpe = PE+k;
+                if (k != PEid && srcpe->cache.find(predid)!=srcpe->cache.end()) {
+                    ///< find this task in cache
+                    if (midlatency[k] > midlatency[PEid] && midlatency[k] <= curmaxpelat) {
+                        ///< do not need extra blk
+                        newselfblk = false;
+                        minblkt = 0;
+                        srcpeid = srcpe->id;
+                        break;
+                    }
+                    else if (midlatency[k] > midlatency[PEid]) {
+                        ///< need more self blk
+                        bigint dist = midlatency[k] - curmaxpelat;
+                        if (dist < minblkt) {
+                            newselfblk = true;
+                            minblkt = dist;
+                            srcpeid = srcpe->id;
+                        }
+                    }
+                    else {
+                        ///< need src pe's blk
+                        bigint dist = midlatency[PEid] - midlatency[k];
+                        if (dist < minblkt) {
+                            newselfblk = false;
+                            minblkt = dist;
+                            srcpeid = srcpe->id;
+                        }
+                    }
+                }
+            }
+
+            if (minblkt < BIGINT_MAX) {
+                ///< need copy - update current max self blk time
+                SyncNode *copyinst = new SyncNode;
+                uint srcidx = (PE+srcpeid)->cache[predid];
+                opinst.src[i] = MESHADDR(PEid, pe->smallestfreeidx);
+                pe->cache.insert(std::make_pair(v->predecessors[i]->src->id, pe->smallestfreeidx));
+                pe->line[pe->smallestfreeidx] = v->predecessors[i]->src->id;
+                copyinst->inst.taskid = taskid;
+                copyinst->inst.op = InstructionNameSpace::COPY;
+                copyinst->inst.dest = MESHADDR(PEid, pe->smallestfreeidx);
+                copyinst->inst.src[0] = MESHADDR(srcpeid, srcidx);
+                copyinst->synctime = midlatency[srcpeid];
+                insertSyncNode(sync, copyinst);
+                while (++(pe->smallestfreeidx) < BLOCKROW && pe->line[pe->smallestfreeidx] < UINT_MAX);  // next smallestfreeidx
+                
+                if (newselfblk) {
+                    curmaxpelat += minblkt;
+                }
+            }
+            else {
+                ///< need load
+                InstructionNameSpace::Instruction loadinst;
+                opinst.src[i] = MESHADDR(PEid, pe->overwriteflag);
+                pe->cache.insert(std::make_pair(v->predecessors[i]->src->id, pe->overwriteflag));
+                pe->line[pe->overwriteflag] = v->predecessors[i]->src->id;
+                loadinst.taskid = taskid;
+                loadinst.op = InstructionNameSpace::LOAD;
+                loadinst.dest = MESHADDR(PEid,pe->overwriteflag);
+                loadinst.src[0] = MESHADDR(pnum, predid);   //TODO: ADD MEM ADDR
+
+                inst.push_front(loadinst);
+                loadlatency[PEid] += LOADLATENCY * threads;
+                // printf("    LOAD %d %d %d %d\n", loadinst.src[0], loadinst.src[1], loadinst.src[2], loadinst.dest);
+                if (pe->smallestfreeidx == pe->overwriteflag) {
+                    ++(pe->smallestfreeidx);
+                    pe->overwriteflag = pe->smallestfreeidx;
+                }
+                else {
+                    ++(pe->overwriteflag);
+                }
+            }
+            pe->overwriteflag = pe->overwriteflag > pe->smallestfreeidx ? pe->overwriteflag : pe->smallestfreeidx;
+        }
+        else {
+            opinst.src[i] = MESHADDR(PEid, pe->cache[predid]);
+        }
+    }
+    SyncNode *tmp, *p = sync->next;
+    uint p1, p2, level;
+    while (p) {
+        tmp = p->next;
+        inst.push_back(p->inst);
+        // printf("    COPY %d %d %d %d\n", p->inst.src[0], p->inst.src[1], p->inst.src[2], p->inst.dest);
+        p1 = p->inst.src[0] / BLOCKROW;
+        p2 = p->inst.dest / BLOCKROW;
+        level = getCommLevel(pnum, p1, p2);
+        bigint max = midlatency[p1] > midlatency[p2] ? midlatency[p1] : midlatency[p2];
+        uint maxthreads = MaxCopyThread[level] > threads ? threads : MaxCopyThread[level];
+        if (level > 0) {
+            max += CommWeight[level] * (threads / maxthreads);
+        }
+        else {
+            max += OPLATENCY;
+        }
+        midlatency[p1] = max;
+        midlatency[p2] = max;
+        delete p;
+        p = tmp;
+    }
+    delete sync;
+    opinst.dest = MESHADDR(PEid, pe->smallestfreeidx);
+    inst.push_back(opinst);
+    // printf("    OP %d %d %d %d\n", opinst.src[0], opinst.src[1],opinst.src[2], opinst.dest);
+    pe->cache.insert(std::make_pair(taskid, pe->smallestfreeidx));
+    pe->line[pe->smallestfreeidx] = taskid;
+    midlatency[PEid] += OPLATENCY;
+    oplatency[PEid] += OPLATENCY;
+    while (++(pe->smallestfreeidx) < BLOCKROW && pe->line[pe->smallestfreeidx] < UINT_MAX);  // next smallestfreeidx
+    pe->overwriteflag = pe->overwriteflag > pe->smallestfreeidx ? pe->overwriteflag : pe->smallestfreeidx;
+    a.finishtime = midlatency[PEid];
+    schedule.insert(std::make_pair(taskid, a));
+    pe->tasks.push_back(&schedule[taskid]);
     return 1;
 }
 
@@ -385,7 +602,8 @@ int StageProcessors::releaseMem(BooleanDag* g, uint taskid, bool *assigned)
 
 int StageProcessors::assignFinish()
 {
-    _PE* p;
+    ProcessElem* p;
+    uint threads = MESHSIZE / pnum;
     for (uint i = 0u; i < pnum; ++i) {
         p = PE+i;
         std::vector<Assignment*>::iterator it;
@@ -398,6 +616,7 @@ int StageProcessors::assignFinish()
                 storeinst.op = InstructionNameSpace::STORE;
                 storeinst.src[0] = MESHADDR(i,mp->second);
                 storeinst.dest = MESHADDR(pnum, mp->first);
+                storelatency[storeinst.src[0]/BLOCKROW] += STORELATENCY * threads;
                 inst.push_back(storeinst);
             }
         }
@@ -413,7 +632,7 @@ int StageProcessors::calcLatency()
     memset((void*)(midlatency), 0, pnum*sizeof(bigint));
     memset((void*)(storelatency), 0, pnum*sizeof(bigint));
     uint threads = MESHSIZE / pnum;
-    std::vector<InstructionNameSpace::Instruction>::iterator it;
+    std::deque<InstructionNameSpace::Instruction>::iterator it;
     for (it = inst.begin(); it < inst.end(); ++it) {
         if (it->op == InstructionNameSpace::LOAD) {
             loadlatency[it->dest/BLOCKROW] += LOADLATENCY * threads;
@@ -452,7 +671,7 @@ int StageProcessors::calcEnergy()
     memset((void*)(midenergy), 0, pnum*sizeof(double));
     memset((void*)(storeenergy), 0, pnum*sizeof(double));
     uint threads = MESHSIZE / pnum;
-    std::vector<InstructionNameSpace::Instruction>::iterator it;
+    std::deque<InstructionNameSpace::Instruction>::iterator it;
     for (it = inst.begin(); it < inst.end(); ++it) {
         if (it->op == InstructionNameSpace::LOAD) {
             loadenergy[it->dest/BLOCKROW] += LOADLATENCY * threads;
@@ -485,7 +704,7 @@ int StageProcessors::calcEnergy()
 /* Setters */
 int StageProcessors::removeStoreInst(uint taskid)
 {
-    std::vector<InstructionNameSpace::Instruction>::iterator it;
+    std::deque<InstructionNameSpace::Instruction>::iterator it;
     for (it = inst.begin(); it != inst.end(); ++it) {
         if (it->op == InstructionNameSpace::STORE && it->taskid == taskid) {
             inst.erase(it);
@@ -498,12 +717,12 @@ int StageProcessors::removeStoreInst(uint taskid)
 
 
 /* Visitors */
-bigint StageProcessors::getmakespan()
+uint StageProcessors::getTaskNum() const
 {
-    return makespan;
+    return schedule.size();
 }
 
-bigint StageProcessors::getLatency()
+bigint StageProcessors::getLatency() const
 {
     int i = 0;
     bigint ll, ml, sl;
@@ -520,7 +739,7 @@ bigint StageProcessors::getLatency()
     return ll + ml + sl;
 }
 
-bigint StageProcessors::getOPLatency()
+bigint StageProcessors::getOPLatency() const
 {
     bigint op;
 
@@ -532,7 +751,7 @@ bigint StageProcessors::getOPLatency()
     return op;
 }
 
-double StageProcessors::getEnergy()
+double StageProcessors::getEnergy() const
 {
     double e = 0.0;
     for (uint i = 0u; i < pnum; ++i) {
@@ -542,13 +761,22 @@ double StageProcessors::getEnergy()
     return e;
 }
 
-uint StageProcessors::getpnum()
+uint const& StageProcessors::getpnum() const
 {
     return pnum;
 }
 
+bigint const& StageProcessors::getPEMidLatency(const uint &id) const
+{
+    return midlatency[id];
+}
 
-_PE* StageProcessors::getPE(uint id)
+bigint* const& StageProcessors::getMidLatency() const
+{
+    return midlatency;
+}
+
+ProcessElem* StageProcessors::getPE(uint id)
 {
     return PE+id;
 }
@@ -578,7 +806,7 @@ uint StageProcessors::getTaskByPE(uint PEid, int n)
     if (!PE) {
         exit(-1);
     }
-    _PE * pe;
+    ProcessElem * pe;
     pe = PE+PEid;
     if (n >= 0 && n < pe->tasks.size()) {
         return pe->tasks[n]->tid;
@@ -595,7 +823,7 @@ uint StageProcessors::getLine(uint taskid)
     return BLOCKROW;
 }
 
-uint StageProcessors::getOverwritepos(uint peid)
+uint const& StageProcessors::getOverwritepos(uint peid) const
 {
     return (PE+peid)->overwriteflag;
 }
@@ -621,7 +849,7 @@ void StageProcessors::getTime2SpatialUtil(std::map<bigint, uint> &res, bigint of
         assigned[i] = false;
     }
 
-    std::vector<InstructionNameSpace::Instruction>::iterator it;
+    std::deque<InstructionNameSpace::Instruction>::iterator it;
 
     bigint curtime;
     std::map<bigint, uint>::iterator resit;
@@ -721,7 +949,7 @@ void StageProcessors::printScheduleByTasks()
 
 void StageProcessors::printScheduleByPE()
 {
-    _PE *pe;
+    ProcessElem *pe;
     std::vector<Assignment*>::iterator ait;
     int tasknum;
     printf("--------Schedule of each PE BEGIN--------\n");
@@ -737,7 +965,7 @@ void StageProcessors::printScheduleByPE()
 
 void StageProcessors::printInstructions(int stage)
 {
-    std::vector<InstructionNameSpace::Instruction>::iterator it;
+    std::deque<InstructionNameSpace::Instruction>::iterator it;
     // printf("Stage %d:\n", stage);
     for (it = inst.begin(); it < inst.end(); ++it) {
         int pe[4] = {it->src[0]/BLOCKROW, it->src[1]/BLOCKROW,it->src[2]/BLOCKROW,it->dest/BLOCKROW};
