@@ -23,6 +23,7 @@ $(DIRS):
 
 simulate:
 	$(CXX) simulation/simulate.cpp $(SRCS) $(CFLAGS) -o $(CXX_BINS)/simulate
+	cp $(CXX_BINS)/simulate simulation/simulate
 
 
 main:

@@ -211,17 +211,19 @@ double totalCost(double curcost, double futurecost, double stddeviation, double 
         pct = (tasknum *1.0) / (tasknum+tasksleft);
     }
     if (pct < 0.5) {
-        w3 = 2 * pct * pct;
+        // w3 = 2 * pct * pct;
+        w3 = pct;
     }
     else {
-        w3 = 2 * (pct-1) * (pct-1);
+        // w3 = 2 * (pct-1) * (pct-1);
+        w3 = 1 - pct;
     }
     w4 = pct * pct;
     double wtmp = 1 - w3 - w4;
     w1 = wtmp * (0.6*pct+0.2);
     w2 = wtmp * (-0.6*pct+0.8);
 
-
+    // printf("%lf(%lf) %lf(%lf) %lf(%lf) %lf(%lf)\n", curcost, w1, futurecost, w2, stddeviation*pnum, w3, maxrow, w4);
     cost = curcost * w1 + futurecost * w2 + stddeviation * pnum * w3 + maxrow * w4;
     return cost;
 }
@@ -256,7 +258,7 @@ uint placeAcdtoDynamicWeights(BooleanDag *G, StageProcessors *P, uint taskid, ui
     static double avgcnt = 0;
 
     if (P->getTaskNum() == 0) {
-        avgblkcost = 0;
+        avgblkcost = OPLATENCY;
         avgcnt = 0;
     }
     /**
@@ -276,13 +278,14 @@ uint placeAcdtoDynamicWeights(BooleanDag *G, StageProcessors *P, uint taskid, ui
     ///< Try each pe as target
     int placeable = 0;
 
+
     for (uint i = 0u; i < pnum; ++i) {
         double tmpcost;
         
         bigint *newmidlatency = new bigint[pnum];
         bigint curmaxpelat = midlat[i];
         bigint cplat = 0;
-        memcpy(newmidlatency, P->getMidLatency(), sizeof(bigint)*pnum);
+        memcpy(newmidlatency, midlat, sizeof(bigint)*pnum);
 
         pe = P->getPE(i);
         if (P->checkPlaceable(G, i, taskid)) {
@@ -367,6 +370,7 @@ uint placeAcdtoDynamicWeights(BooleanDag *G, StageProcessors *P, uint taskid, ui
                 }
             }
         }
+        newmidlatency[i] += OPLATENCY;
 
         ///< get futurecost - check each pred, find best src pe
         for (uint j = 0u; j < succnum; ++j) {
@@ -386,7 +390,11 @@ uint placeAcdtoDynamicWeights(BooleanDag *G, StageProcessors *P, uint taskid, ui
         stddeviation = calculateStandardDeviation(newmidlatency, pnum) - curstdDeviation;
 
         ///< get max row change
-        maxrow = cplat + OPLATENCY;
+        maxrow = cplat;
+        if (maxidx == i || cplat > 0) {
+            maxrow += OPLATENCY;
+        }
+        // printf("Trying to assign %u to %u, weights: ", taskid, i);
         tmpcost = totalCost(curcost, futurecost, stddeviation, maxrow, P, tasksleft);
         if (tmpcost < cost) {
             cost = tmpcost;
@@ -397,6 +405,12 @@ uint placeAcdtoDynamicWeights(BooleanDag *G, StageProcessors *P, uint taskid, ui
         delete[] newmidlatency;
     }
     if (placeable) {
+        if (copycnt > 0u) {
+            avgblkcost = avgblkcost * avgcnt + copylat;
+            avgcnt += copycnt;
+            avgblkcost /= avgcnt;
+        }
+        // printf("assign to %u\n", pid);
         P->dynamicWeightsAssignTask(G, taskid, pid);
     }
     else {
