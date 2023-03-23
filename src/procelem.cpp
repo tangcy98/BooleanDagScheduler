@@ -739,6 +739,11 @@ bigint StageProcessors::getLatency() const
     return ll + ml + sl;
 }
 
+bigint const& StageProcessors::getPEOPLatency(const uint &id) const
+{
+    return oplatency[id];
+}
+
 bigint StageProcessors::getOPLatency() const
 {
     bigint op;
@@ -841,6 +846,8 @@ Assignment* StageProcessors::getAssignmentByTask(uint taskid)
 void StageProcessors::getTime2SpatialUtil(std::map<bigint, uint> &res, bigint offset)
 {
     memset((void*)(midlatency), 0, pnum*sizeof(bigint));
+    memset((void*)(oplatency), 0, pnum*sizeof(bigint));
+
     bigint midstart = 0;
     uint threads = MESHSIZE / pnum;
 

@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
         Bsize = (size + BLOCKCOL - 1) / BLOCKCOL;
         if (searchbound < LOG2(MESHSIZE)) {
             searchbound = LOG2(MESHSIZE);
-            sche[searchbound] = rankuHEFTSchedule(G, MESHSIZE);
+            sche[searchbound] = rankuDynamicWeightsSchedule(G, MESHSIZE);
             cost[searchbound] = sche[searchbound].latency;
         }
         
@@ -169,17 +169,27 @@ int main(int argc, char *argv[])
 #else
         printf("SRAM,");
 #endif
-        printf("%d*4*4*%d*%d,%s,%s,%lf,%lf,%lf,%lf,%lf,%lf,%lld,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", 
+        // printf("%d*4*4*%d*%d,%s,%s,%lf,%lf,%lf,%lf,%lf,%lf,%lld,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", 
+        //     BANKNUM, BLOCKROW, BLOCKCOL, 
+        //     benchmark, argv[3+i], 
+        //     (double)(latency) / 1000.0, energy / 1000.0, 
+        //     (double)(simdlatency) / 1000.0, simdenergy / 1000.0, 
+        //     (double)(oplatency) / 1000.0, (double)(simdoplatency) / 1000ll, 
+        //     operations, throughput, simdthroughput, 
+        //     efficiency, simdefficiency, 
+        //     temporalutil, simdtemporalutil, 
+        //     maxspatialutil, avgspatialutil, 
+        //     simdmaxspatialutil, simdavgspatialutil);
+        printf("%d*4*4*%d*%d,%s,%s", 
             BANKNUM, BLOCKROW, BLOCKCOL, 
-            benchmark, argv[3+i], 
-            (double)(latency) / 1000.0, energy / 1000.0, 
-            (double)(simdlatency) / 1000.0, simdenergy / 1000.0, 
-            (double)(oplatency) / 1000.0, (double)(simdoplatency) / 1000ll, 
-            operations, throughput, simdthroughput, 
-            efficiency, simdefficiency, 
-            temporalutil, simdtemporalutil, 
-            maxspatialutil, avgspatialutil, 
-            simdmaxspatialutil, simdavgspatialutil);
+            benchmark, argv[3+i]);
+        for (uint j = 0u; j < sche[0].p->getpnum(); ++j) {
+            printf(",%lld",sche[0].p->getPEMidLatency(j));
+        }
+        for (uint j = 0u; j < sche[0].p->getpnum(); ++j) {
+            printf(",%lld",sche[0].p->getPEOPLatency(j));
+        }
+        printf("\n");
         // printf("final latency: %lld ns, energy: %lf nJ\n", latency / 1000ll, energy / 1000.0);
         // printf("simd  latency: %lld ns, energy: %lf nJ\n", simdlatency / 1000ll, simdenergy / 1000.0);
         delete solver;

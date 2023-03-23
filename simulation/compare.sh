@@ -1,6 +1,6 @@
-workload=(1 256 1024 4096 16384 200000)
-benchmark=(adder cavlc dec div int2float log2 max multiplier priority router sin sqrt)
-baknums=(1 2 4 8 16)
+workload=(1 256 4096 16384 200000)
+benchmark=(adder cavlc dec div int2float log2 max multiplier sin)
+baknums=(1 4 16)
 type=(SRAM RRAM)
 
 rm -f $1

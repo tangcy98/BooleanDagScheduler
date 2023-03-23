@@ -13,13 +13,13 @@
 #include <cstring>
 
 double calculateStandardDeviation(bigint arr[], int n) {
-    double sum = 0.0, mean, stdDeviation = 0.0;
+    double mean = 0.0, stdDeviation = 0.0;
 
     //calculate mean
     for (int i = 0; i < n; i++) {
-        sum += arr[i];
+        mean += arr[i];
     }
-    mean = sum / n;
+    mean /= n;
 
     //calculate standard deviation
     for (int i = 0; i < n; i++) {
@@ -210,6 +210,7 @@ double totalCost(double curcost, double futurecost, double stddeviation, double 
     if (tasksleft < predicttasksleft) {
         pct = (tasknum *1.0) / (tasknum+tasksleft);
     }
+    // w3 = -2 * (pct - 0.5) * (pct - 0.5) + 0.5;
     if (pct < 0.5) {
         // w3 = 2 * pct * pct;
         w3 = pct;
@@ -253,11 +254,12 @@ uint placeAcdtoDynamicWeights(BooleanDag *G, StageProcessors *P, uint taskid, ui
         return pnum;
     }
     uint pid;   ///< return value
+    uint tasknum = P->getTaskNum();
     double cost = 1e308;
     static double avgblkcost = 0;
     static double avgcnt = 0;
 
-    if (P->getTaskNum() == 0) {
+    if (tasknum == 0) {
         avgblkcost = OPLATENCY;
         avgcnt = 0;
     }
@@ -395,6 +397,9 @@ uint placeAcdtoDynamicWeights(BooleanDag *G, StageProcessors *P, uint taskid, ui
             maxrow += OPLATENCY;
         }
         // printf("Trying to assign %u to %u, weights: ", taskid, i);
+        // if (tasknum) {
+        //     curcost /= tasknum;
+        // }
         tmpcost = totalCost(curcost, futurecost, stddeviation, maxrow, P, tasksleft);
         if (tmpcost < cost) {
             cost = tmpcost;
